@@ -90,12 +90,13 @@ class Archiver:
 
         # Get the URL, the text, and any images
         text = post.find_element(By.ID, "content").text
-        images = list(
-            filter(
+        images = [
+            url.split("=")[0] + "=s1080"
+            for url in filter(
                 lambda img: img is not None,
                 (img.get_attribute("src") for img in post.find_elements(By.TAG_NAME, "img")),
             )
-        )
+        ]
 
         # We skip the first image since that's always the profile picture.
         post = Post(url=url, text=text, images=images[1:])
