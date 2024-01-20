@@ -33,6 +33,7 @@ class Post:
     url: str
     text: str
     images: List[str]
+    links: List[str]
     is_members: bool
     relative_date: str
     num_comments: Optional[str]
@@ -138,6 +139,16 @@ class Archiver:
 
         is_members = bool(post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer"))
 
+        # Filter out the first link as it will always be the channel.
+        links = list(
+            dict.fromkeys(
+                filter(
+                    lambda link: link is not None,
+                    (link.get_attribute("href") for link in post.find_elements(By.TAG_NAME, "a")),
+                )
+            )
+        )[1:]
+
         images = [
             url.split("=")[0] + "=s3840"
             for url in filter(
@@ -170,6 +181,7 @@ class Archiver:
         post = Post(
             url=url,
             text=text,
+            links=links,
             images=images[1:],
             is_members=is_members,
             relative_date=relative_date,

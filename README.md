@@ -1,10 +1,11 @@
 # yt-community-post-archiver
 
-Archives YouTube community posts. Will try and grab the post's text content, images at as large of a resolution as
-possible, polls, and some other various metadata.
+Archives YouTube community posts. Will try and grab the post's text content, images at
+as large of a resolution as possible, polls, and some other various metadata.
 
-Note this was written _really_ quickly, and might not work every time. It is also a bit fragile, and YT updates
-might break it. Feel free to let me know if it's broken, and if I can I'll try to fix it!
+Note this was written _really_ quickly, and might not work every time (my Python is also
+a bit shit). It is also a bit fragile, and YT updates might break it. Feel free to let
+me know if it's broken, and if I have the bandwidth I'll try and fix it.
 
 ## Usage
 
