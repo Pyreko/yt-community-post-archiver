@@ -65,21 +65,28 @@ class Archiver:
         url: str,
         output_dir: Optional[str],
         profile_dir: Optional[str] = None,
+        max_posts: Optional[str] = None,
     ) -> None:
         options = webdriver.ChromeOptions()
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--start-maximized")
 
         if profile_dir is not None:
-            split_dir = profile_dir.rsplit("/", 1)
+            if not os.path.exists(profile_dir):
+                print(f"Profile path `{profile_dir}` doesn't exist!")
+                exit(1)
+
+            abs_profile_dir = os.path.abspath(profile_dir)
+            split_dir = abs_profile_dir.rsplit("/", 1)
             user_data_dir = split_dir[0]
             profile_dir = split_dir[1]
 
             options.add_argument(f"--user-data-dir={user_data_dir}")
             options.add_argument(f"--profile-directory={profile_dir}")
         else:
-            # For some reason this doesn't work if I set a profile...????
-            options.add_argument("--headless")
+            # Headless doesn't work with profiles... see https://github.com/SeleniumHQ/selenium/issues/11224
+            options.add_argument("--disable-gpu")
+            options.add_argument("--headless=chrome")
 
         # Make sure the output directory exists... if not, then try and make it.
         output_dir = "archive-output" if output_dir is None else output_dir
@@ -91,6 +98,7 @@ class Archiver:
         self.url = url
         self.output_dir = output_dir
         self.seen = set()
+        self.max_posts = max_posts
 
     def filter_post_href(self, candidate: WebElement) -> bool:
         href = candidate.get_attribute("href")
@@ -128,15 +136,12 @@ class Archiver:
         thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
         num_thumbs_up = thumbs_elements[0].text if thumbs_elements else None
 
-        # This may need retries due to the above click.
-        try:
-            text_elements = post.find_elements(By.ID, "content")
-            if not text_elements:
-                return
-        except:
-            pass
-
+        text_elements = post.find_elements(By.ID, "content")
+        if not text_elements:
+            return
         text = text_elements[0].get_attribute("innerText")
+
+        # TODO: Check polls and results
 
         # We skip the first image since that's always the profile picture.
         post = Post(
@@ -148,8 +153,11 @@ class Archiver:
             num_comments=num_comments,
             num_thumbs_up=num_thumbs_up,
         )
-        self.seen.add(url)
         post.save(self.output_dir)
+        self.seen.add(url)
+
+    def at_max_posts(self) -> bool:
+        return self.max_posts is not None and len(self.seen) >= self.max_posts
 
     def scrape(self):
         LOAD_SLEEP_SECS = 3
@@ -167,6 +175,9 @@ class Archiver:
                     posts = self.find_posts()
                     for post in posts:
                         self.handle_post(post)
+                        if self.at_max_posts():
+                            print(f"Hit maximum posts ({self.max_posts}). Halting.")
+                            return
                 except:
                     continue
 
@@ -197,24 +208,28 @@ class Archiver:
 
 def main():
     parser = argparse.ArgumentParser(description="Archives YouTube community posts.")
-    parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
     parser.add_argument("-o", "--output_dir", type=str, required=False, help="The directory to save to.")
     parser.add_argument("-p", "--profile_dir", type=str, required=False, help="The path to an existing Chrome profile.")
     parser.add_argument(
-        "-r", "--rerun", type=str, required=False, help="How many times to rerun the archiver. Should be at least 1."
+        "-r", "--rerun", type=str, required=False, help="How many times to rerun the archiver. Must be greater than 0."
     )
+    parser.add_argument(
+        "-m", "--max_posts", type=str, required=False, help="Set a limit on how many posts to download."
+    )
+    parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
 
     args = parser.parse_args()
     url = args.url
     output_dir = args.output_dir
     profile_dir = args.profile_dir
     rerun = int(args.rerun) if args.rerun and int(args.rerun) > 0 else 1
+    max_posts = int(args.max_posts) if args.max_posts else None
 
     try:
-        print(f"Running the archiver {rerun} time(s).")
+        print(f"Running the archiver {rerun} time(s) on `{url}`...")
         for i in range(rerun):
-            print(f"===== Run {i + 1} ======")
-            with Archiver(url, output_dir, profile_dir) as archiver:
+            with Archiver(url=url, output_dir=output_dir, profile_dir=profile_dir, max_posts=max_posts) as archiver:
+                print(f"===== Run {i + 1} ======")
                 archiver.scrape()
     finally:
         print("Done!")

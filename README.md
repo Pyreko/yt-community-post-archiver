@@ -18,17 +18,38 @@ if it's broken, and if I can I'll try to fix it!
    source venv/bin/activate
    ```
 
-3. (Optional) Download the dependencies in `requirements.txt`:
+3. (Optional) Download the dependencies in `requirements.txt` if you do not already have them:
 
    ```shell
    pip3 install -r requirements.txt
    ```
 
-4. Run `archiver.py`. For example:
+4. Install Chrome, as this uses headless Chrome.
+
+5. Run `archiver.py`. For example:
 
    ```shell
-   python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community
+   python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community"
    ```
+
+   This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
+   it can find from the provided page.
+
+   If you want to set the save location, then use `-o`:
+
+   ```shell
+   python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -o "/home/me/my_save"
+   ```
+
+   If you need to pass your user profile, then pass it with `-p`:
+
+   ```shell
+   python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -p "/home/me/.config/google-chrome/Profile 1"
+   ```
+
+   You can find the profile path at `chrome://version` beside "Profile Path". Note that if you pass in a profile,
+   the archiver cannot run in headless mode for [reasons](https://github.com/SeleniumHQ/selenium/issues/11224), so
+   you will see a browser window pop up. Just don't touch it while it works; you can leave it minimized!
 
    For more information, run using `--help` like so:
 
