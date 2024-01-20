@@ -1,11 +1,10 @@
 # yt-community-post-archiver
 
 Archives YouTube community posts. Will try and grab the post's text content, images at as large of a resolution as
-possible, and some other various metadata.
+possible, polls, and some other various metadata.
 
-Note this was written _really_ quickly, and might not work every time - you may need to run this a few times to
-get everything and not have crashes. It is also a bit fragile, and YT updates might break it. Feel free to let me know
-if it's broken, and if I can I'll try to fix it!
+Note this was written _really_ quickly, and might not work every time. It is also a bit fragile, and YT updates
+might break it. Feel free to let me know if it's broken, and if I can I'll try to fix it!
 
 ## Usage
 
@@ -33,7 +32,8 @@ if it's broken, and if I can I'll try to fix it!
    ```
 
    This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
-   it can find from the provided page.
+   it can find from the provided page, and save results in an automatically created folder called `archive-output`
+   in the same directory.
 
    If you want to set the save location, then use `-o`:
 
@@ -56,3 +56,7 @@ if it's broken, and if I can I'll try to fix it!
    ```shell
    python3 archiver.py --help
    ```
+
+## Notes
+
+- Poll vote percentages can only be shown if you are logged in and have voted on the poll.

@@ -13,6 +13,21 @@ import requests
 import traceback
 
 
+class PollEntry:
+    def __init__(self, s: str) -> None:
+        split = s.splitlines()
+
+        try:
+            self.option = split[0]
+        except:
+            self.option = "N/A"
+
+        try:
+            self.percentage = int(split[1].split("%")[0])
+        except:
+            self.percentage = "N/A"
+
+
 @dataclass
 class Post:
     url: str
@@ -22,6 +37,7 @@ class Post:
     relative_date: str
     num_comments: Optional[str]
     num_thumbs_up: Optional[str]
+    poll: Optional[List[PollEntry]]
 
     def save(self, output_dir: str):
         id = self.url.split("/")[-1]
@@ -39,7 +55,7 @@ class Post:
         try:
             data_path = os.path.join(dir, "post.txt")
             with open(data_path, "w", encoding="utf-8") as f:
-                json.dump(self.__dict__, f, ensure_ascii=False, indent=4)
+                json.dump(self.__dict__, f, ensure_ascii=False, indent=4, default=lambda o: o.__dict__)
         except:
             print(f"err: couldn't save data dump at {data_path}")
 
@@ -141,7 +157,14 @@ class Archiver:
             return
         text = text_elements[0].get_attribute("innerText")
 
-        # TODO: Check polls and results
+        poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
+        if poll_elements:
+            poll = [
+                PollEntry(p)
+                for p in filter(lambda p: p is not None, (p.get_attribute("innerText") for p in poll_elements))
+            ]
+        else:
+            poll = None
 
         # We skip the first image since that's always the profile picture.
         post = Post(
@@ -152,6 +175,7 @@ class Archiver:
             relative_date=relative_date,
             num_comments=num_comments,
             num_thumbs_up=num_thumbs_up,
+            poll=poll,
         )
         post.save(self.output_dir)
         self.seen.add(url)
