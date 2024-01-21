@@ -24,7 +24,7 @@ me know if it's broken, and if I have the bandwidth I'll try and fix it.
    pip3 install -r requirements.txt
    ```
 
-4. Install Chrome, as this uses headless Chrome.
+4. Make sure the computer you're running this on has Chrome or Firefox, as it uses a browser to grab posts.
 
 5. Run `archiver.py`. For example:
 
@@ -33,31 +33,37 @@ me know if it's broken, and if I have the bandwidth I'll try and fix it.
    ```
 
    This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
-   it can find from the provided page, and save results in an automatically created folder called `archive-output`
-   in the same directory.
+   it can find from the provided page, and save text metadata + images in an automatically created folder called
+   `archive-output` in the same directory the program was called in. Note this will take a while!
 
-   If you want to set the save location, then use `-o`:
-
-   ```shell
-   python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -o "/home/me/my_save"
-   ```
-
-   If you need to pass your user profile, then pass it with `-p`:
-
-   ```shell
-   python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -p "/home/me/.config/google-chrome/Profile 1"
-   ```
-
-   You can find the profile path at `chrome://version` beside "Profile Path". Note that if you pass in a profile,
-   the archiver cannot run in headless mode for [reasons](https://github.com/SeleniumHQ/selenium/issues/11224), so
-   you will see a browser window pop up. Just don't touch it while it works; you can leave it minimized!
-
-   For more information, run using `--help` like so:
+   For info on the options you can use, run with `--help`:
 
    ```shell
    python3 archiver.py --help
    ```
 
+### Set save location
+
+If you want to set the save location, then use `-o`:
+
+```shell
+python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -o "/home/me/my_save"
+```
+
+### Use cookies file
+
+If you want to grab membership posts, you'll need to have a Netscape-format cookies file, which you can pass the path with `-c`:
+
+```shell
+python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -c "/home/me/my_cookies_file.txt"
+```
+
+### Use Firefox instead of Chrome as the driver
+
+```shell
+python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -d "firefox"
+```
+
 ## Notes
 
-- Poll vote percentages can only be shown if you are logged in and have voted on the poll.
+- Poll vote percentages can only be shown if you are logged in and have voted on the poll before.

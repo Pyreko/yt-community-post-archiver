@@ -1,79 +1,26 @@
 #!/usr/bin/python
 
-from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
 import time
 from typing import List, Optional, TypeVar
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 import argparse
-import json
 import os
-import requests
 import traceback
+from post import Post, PollEntry
+from cookies import Cookie, parse_cookies
 
 
-class PollEntry:
-    def __init__(self, s: str) -> None:
-        split = s.splitlines()
+class Driver(Enum):
+    """
+    The backing browser to use for scraping.
+    """
 
-        try:
-            self.option = split[0]
-        except:
-            self.option = "N/A"
-
-        try:
-            self.percentage = int(split[1].split("%")[0])
-        except:
-            self.percentage = "N/A"
-
-
-@dataclass
-class Post:
-    url: str
-    text: str
-    images: List[str]
-    links: List[str]
-    is_members: bool
-    relative_date: str
-    num_comments: Optional[str]
-    num_thumbs_up: Optional[str]
-    poll: Optional[List[PollEntry]]
-
-    def save(self, output_dir: str):
-        id = self.url.split("/")[-1]
-        dir = os.path.join(output_dir, id)
-
-        # print(f"Trying to save `{id}` at `{dir}`...")
-
-        if not os.path.exists(dir):
-            try:
-                os.mkdir(dir)
-            except:
-                print(f"err: couldn't make directory at {dir}")
-                return
-
-        try:
-            data_path = os.path.join(dir, "post.txt")
-            with open(data_path, "w", encoding="utf-8") as f:
-                json.dump(self.__dict__, f, ensure_ascii=False, indent=4, default=lambda o: o.__dict__)
-        except:
-            print(f"err: couldn't save data dump at {data_path}")
-
-        for itx, image in enumerate(self.images):
-            try:
-                img_name = f"{id}-{itx}.png"
-                img_path = os.path.join(dir, img_name)
-
-                if not os.path.exists(img_path):
-                    img_data = requests.get(image).content
-                    with open(img_path, "wb") as f:
-                        f.write(img_data)
-                else:
-                    # print(f"Skipping saving image at {img_path} as it's already been saved.")
-                    pass
-            except:
-                print(f"err: couldn't save image `{image}` dump at {img_path}")
+    FIREFOX = 1
+    CHROME = 2
 
 
 class Archiver:
@@ -81,29 +28,32 @@ class Archiver:
         self,
         url: str,
         output_dir: Optional[str],
-        profile_dir: Optional[str] = None,
+        cookie_path: Optional[str] = None,
         max_posts: Optional[str] = None,
+        driver: Driver = Driver.CHROME,
     ) -> None:
-        options = webdriver.ChromeOptions()
-        options.add_argument("--window-size=1920,1080")
-        options.add_argument("--start-maximized")
+        WIDTH = 1920
+        HEIGHT = 1080
 
-        if profile_dir is not None:
-            if not os.path.exists(profile_dir):
-                print(f"Profile path `{profile_dir}` doesn't exist!")
-                exit(1)
+        match driver:
+            case Driver.CHROME:
+                options = webdriver.ChromeOptions()
+                options.add_argument(f"--window-size={WIDTH},{HEIGHT}")
+                options.add_argument("--disable-gpu")
+                options.add_argument("--headless")
+            case Driver.FIREFOX:
+                options = webdriver.FirefoxOptions()
+                options.add_argument(f"-width={WIDTH}")
+                options.add_argument(f"-height={HEIGHT}")
+                options.add_argument("-headless")
 
-            abs_profile_dir = os.path.abspath(profile_dir)
-            split_dir = abs_profile_dir.rsplit("/", 1)
-            user_data_dir = split_dir[0]
-            profile_dir = split_dir[1]
+        match driver:
+            case Driver.CHROME:
+                self.driver = webdriver.Chrome(options)
+            case Driver.FIREFOX:
+                self.driver = webdriver.Firefox(options)
 
-            options.add_argument(f"--user-data-dir={user_data_dir}")
-            options.add_argument(f"--profile-directory={profile_dir}")
-        else:
-            # Headless doesn't work with profiles... see https://github.com/SeleniumHQ/selenium/issues/11224
-            options.add_argument("--disable-gpu")
-            options.add_argument("--headless=chrome")
+        self.driver.set_window_size(WIDTH, HEIGHT)  # just in case it wasn't set
 
         # Make sure the output directory exists... if not, then try and make it.
         output_dir = "archive-output" if output_dir is None else output_dir
@@ -111,7 +61,7 @@ class Archiver:
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
 
-        self.driver = webdriver.Chrome(options)
+        self.cookie_path = cookie_path
         self.url = url
         self.output_dir = output_dir
         self.seen = set()
@@ -201,8 +151,24 @@ class Archiver:
 
         try:
             self.driver.get(self.url)
-            time.sleep(LOAD_SLEEP_SECS)
 
+            # Validate that the cookies path is valid if set, then set cookies.
+            if self.cookie_path is not None:
+                if os.path.exists(self.cookie_path):
+                    time.sleep(LOAD_SLEEP_SECS)
+
+                    path = Path(self.cookie_path)
+                    cookies = parse_cookies(path)
+
+                    for cookie in cookies:
+                        if cookie.domain in self.url:
+                            self.driver.add_cookie(cookie.__dict__)
+
+                    self.driver.refresh()
+                else:
+                    raise Exception(f"Cookies path at {self.cookie_path} doesn't exist!")
+
+            time.sleep(LOAD_SLEEP_SECS)
             num_seen = len(self.seen)
             same_seen = 0
 
@@ -245,26 +211,45 @@ class Archiver:
 def main():
     parser = argparse.ArgumentParser(description="Archives YouTube community posts.")
     parser.add_argument("-o", "--output_dir", type=str, required=False, help="The directory to save to.")
-    parser.add_argument("-p", "--profile_dir", type=str, required=False, help="The path to an existing Chrome profile.")
+    parser.add_argument(
+        "-c", "--cookie_path", type=str, required=False, help="The path to a cookies file in the Netscape format."
+    )
     parser.add_argument(
         "-r", "--rerun", type=str, required=False, help="How many times to rerun the archiver. Must be greater than 0."
     )
     parser.add_argument(
         "-m", "--max_posts", type=str, required=False, help="Set a limit on how many posts to download."
     )
+    parser.add_argument(
+        "-d",
+        "--driver",
+        type=str,
+        required=False,
+        help="Specify which browser driver to use.",
+        choices=["firefox", "chrome"],
+    )
     parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
 
     args = parser.parse_args()
     url = args.url
     output_dir = args.output_dir
-    profile_dir = args.profile_dir
+    cookie_path = args.cookie_path
     rerun = int(args.rerun) if args.rerun and int(args.rerun) > 0 else 1
     max_posts = int(args.max_posts) if args.max_posts else None
+
+    if args.driver is None or args.driver == "chrome":
+        driver = Driver.CHROME
+    elif args.driver == "firefox":
+        driver = Driver.FIREFOX
+    else:
+        raise Exception("Unsupported driver type!")
 
     try:
         print(f"Running the archiver {rerun} time(s) on `{url}`...")
         for i in range(rerun):
-            with Archiver(url=url, output_dir=output_dir, profile_dir=profile_dir, max_posts=max_posts) as archiver:
+            with Archiver(
+                url=url, output_dir=output_dir, cookie_path=cookie_path, max_posts=max_posts, driver=driver
+            ) as archiver:
                 print(f"===== Run {i + 1} ======")
                 archiver.scrape()
     finally:
