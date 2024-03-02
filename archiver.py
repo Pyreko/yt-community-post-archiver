@@ -79,7 +79,9 @@ class Archiver:
         return posts
 
     def handle_post(self, post: WebElement) -> None:
-        post_link = next(filter(self.filter_post_href, post.find_elements(By.TAG_NAME, "a")), None)
+        post_link = next(
+            filter(self.filter_post_href, post.find_elements(By.TAG_NAME, "a")), None
+        )
 
         url = post_link.get_attribute("href")
         if url in self.seen:
@@ -87,14 +89,19 @@ class Archiver:
 
         relative_date = post_link.text
 
-        is_members = bool(post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer"))
+        is_members = bool(
+            post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer")
+        )
 
         # Filter out the first link as it will always be the channel.
         links = list(
             dict.fromkeys(
                 filter(
                     lambda link: link is not None,
-                    (link.get_attribute("href") for link in post.find_elements(By.TAG_NAME, "a")),
+                    (
+                        link.get_attribute("href")
+                        for link in post.find_elements(By.TAG_NAME, "a")
+                    ),
                 )
             )
         )[1:]
@@ -103,7 +110,10 @@ class Archiver:
             url.split("=")[0] + "=s3840"
             for url in filter(
                 lambda img: img is not None,
-                (img.get_attribute("src") for img in post.find_elements(By.TAG_NAME, "img")),
+                (
+                    img.get_attribute("src")
+                    for img in post.find_elements(By.TAG_NAME, "img")
+                ),
             )
         ]
 
@@ -122,7 +132,10 @@ class Archiver:
         if poll_elements:
             poll = [
                 PollEntry(p)
-                for p in filter(lambda p: p is not None, (p.get_attribute("innerText") for p in poll_elements))
+                for p in filter(
+                    lambda p: p is not None,
+                    (p.get_attribute("innerText") for p in poll_elements),
+                )
             ]
         else:
             poll = None
@@ -166,7 +179,9 @@ class Archiver:
 
                     self.driver.refresh()
                 else:
-                    raise Exception(f"Cookies path at {self.cookie_path} doesn't exist!")
+                    raise Exception(
+                        f"Cookies path at {self.cookie_path} doesn't exist!"
+                    )
 
             time.sleep(LOAD_SLEEP_SECS)
             num_seen = len(self.seen)
@@ -209,22 +224,44 @@ class Archiver:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Archives YouTube community posts.")
-    parser.add_argument("-o", "--output_dir", type=str, required=False, help="The directory to save to.")
+    parser = argparse.ArgumentParser(
+        description="Archives YouTube community posts.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    
     parser.add_argument(
-        "-c", "--cookie_path", type=str, required=False, help="The path to a cookies file in the Netscape format."
+        "-o", "--output_dir", type=str, required=False, help="The directory to save to."
     )
     parser.add_argument(
-        "-r", "--rerun", type=str, required=False, help="How many times to rerun the archiver. Must be greater than 0."
+        "-c",
+        "--cookie_path",
+        type=str,
+        required=False,
+        default=None,
+        help="The path to a cookies file in the Netscape format.",
     )
     parser.add_argument(
-        "-m", "--max_posts", type=str, required=False, help="Set a limit on how many posts to download."
+        "-r",
+        "--rerun",
+        type=str,
+        required=False,
+        default=1,
+        help="How many times to rerun the archiver. Must be greater than 0.",
+    )
+    parser.add_argument(
+        "-m",
+        "--max_posts",
+        type=str,
+        required=False,
+        default=None,
+        help="Set a limit on how many posts to download.",
     )
     parser.add_argument(
         "-d",
         "--driver",
         type=str,
         required=False,
+        default="chrome",
         help="Specify which browser driver to use.",
         choices=["firefox", "chrome"],
     )
@@ -248,9 +285,14 @@ def main():
         print(f"Running the archiver {rerun} time(s) on `{url}`...")
         for i in range(rerun):
             with Archiver(
-                url=url, output_dir=output_dir, cookie_path=cookie_path, max_posts=max_posts, driver=driver
+                url=url,
+                output_dir=output_dir,
+                cookie_path=cookie_path,
+                max_posts=max_posts,
+                driver=driver,
             ) as archiver:
-                print(f"===== Run {i + 1} ======")
+                if rerun > 1:
+                    print(f"===== Run {i + 1} ======")
                 archiver.scrape()
     finally:
         print("Done!")
