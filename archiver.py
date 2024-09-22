@@ -28,6 +28,7 @@ class Archiver:
         self,
         url: str,
         output_dir: Optional[str],
+        members_only: bool,
         cookie_path: Optional[str] = None,
         max_posts: Optional[str] = None,
         driver: Driver = Driver.CHROME,
@@ -66,6 +67,7 @@ class Archiver:
         self.output_dir = output_dir
         self.seen = set()
         self.max_posts = max_posts
+        self.members_only = members_only
 
     def filter_post_href(self, candidate: WebElement) -> bool:
         href = candidate.get_attribute("href")
@@ -87,11 +89,16 @@ class Archiver:
         if url in self.seen:
             return
 
+
         relative_date = post_link.text
 
         is_members = bool(
             post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer")
         )
+
+        if self.members_only and (not is_members):
+            # print("Skipping as it is not a members post.")
+            return
 
         # Filter out the first link as it will always be the channel.
         links = list(
@@ -152,6 +159,8 @@ class Archiver:
             num_thumbs_up=num_thumbs_up,
             poll=poll,
         )
+
+        print(f"Handling {url}");
         post.save(self.output_dir)
         self.seen.add(url)
 
@@ -265,6 +274,7 @@ def main():
         help="Specify which browser driver to use.",
         choices=["firefox", "chrome"],
     )
+    parser.add_argument("--members_only", help="Only save members posts.", action='store_true')
     parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
 
     args = parser.parse_args()
@@ -273,6 +283,7 @@ def main():
     cookie_path = args.cookie_path
     rerun = int(args.rerun) if args.rerun and int(args.rerun) > 0 else 1
     max_posts = int(args.max_posts) if args.max_posts else None
+    members_only = bool(args.members_only)
 
     if args.driver is None or args.driver == "chrome":
         driver = Driver.CHROME
@@ -290,6 +301,7 @@ def main():
                 cookie_path=cookie_path,
                 max_posts=max_posts,
                 driver=driver,
+                members_only=members_only,
             ) as archiver:
                 if rerun > 1:
                     print(f"===== Run {i + 1} ======")

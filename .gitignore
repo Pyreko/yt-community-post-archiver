@@ -166,3 +166,4 @@ cython_debug/
 archive-output/
 pomu/
 irys/
+output/
