@@ -31,6 +31,7 @@ class Archiver:
         url: str,
         output_dir: Optional[str],
         members_only: bool,
+        headless: bool,
         cookie_path: Optional[str] = None,
         max_posts: Optional[str] = None,
         profile_dir: Optional[str] = None,
@@ -45,7 +46,9 @@ class Archiver:
                 options = webdriver.ChromeOptions()
                 options.add_argument(f"--window-size={WIDTH},{HEIGHT}")
                 options.add_argument("--disable-gpu")
-                # options.add_argument("--headless")
+
+                if headless:
+                    options.add_argument("--headless")
 
                 if profile_dir:
                     profile_name = (
@@ -58,7 +61,9 @@ class Archiver:
                 options = webdriver.FirefoxOptions()
                 options.add_argument(f"-width={WIDTH}")
                 options.add_argument(f"-height={HEIGHT}")
-                options.add_argument("-headless")
+
+                if headless:
+                    options.add_argument("-headless")
 
         match driver:
             case Driver.CHROME:
@@ -310,6 +315,11 @@ def main():
     parser.add_argument(
         "--members_only", help="Only save members posts.", action="store_true"
     )
+    parser.add_argument(
+        "--not_headless",
+        help="Show the Chrome/Firefox browser window when scraping. May affect behaviour.",
+        action="store_true",
+    )
     parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
 
     args = parser.parse_args()
@@ -321,6 +331,7 @@ def main():
     members_only = bool(args.members_only)
     profile_dir = args.profile_dir
     profile_name = args.profile_name
+    headless = not (args.not_headless)
 
     if args.driver is None or args.driver == "chrome":
         driver = Driver.CHROME
@@ -337,6 +348,7 @@ def main():
                 output_dir=output_dir,
                 cookie_path=cookie_path,
                 max_posts=max_posts,
+                headless=headless,
                 driver=driver,
                 members_only=members_only,
                 profile_dir=profile_dir,
