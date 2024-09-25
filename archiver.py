@@ -12,6 +12,8 @@ import os
 import traceback
 from post import Post, PollEntry
 from cookies import Cookie, parse_cookies
+import signal
+import sys
 
 
 class Driver(Enum):
@@ -28,8 +30,12 @@ class Archiver:
         self,
         url: str,
         output_dir: Optional[str],
+        members_only: bool,
+        headless: bool,
         cookie_path: Optional[str] = None,
         max_posts: Optional[str] = None,
+        profile_dir: Optional[str] = None,
+        profile_name: Optional[str] = None,
         driver: Driver = Driver.CHROME,
     ) -> None:
         WIDTH = 1920
@@ -40,18 +46,36 @@ class Archiver:
                 options = webdriver.ChromeOptions()
                 options.add_argument(f"--window-size={WIDTH},{HEIGHT}")
                 options.add_argument("--disable-gpu")
-                options.add_argument("--headless")
+
+                if headless:
+                    options.add_argument("--headless")
+
+                if profile_dir:
+                    profile_name = (
+                        profile_name if profile_name is not None else "Default"
+                    )
+
+                    options.add_argument(f"--user-data-dir={profile_dir}")
+                    options.add_argument(f"--profile-directory={profile_name}")
             case Driver.FIREFOX:
                 options = webdriver.FirefoxOptions()
                 options.add_argument(f"-width={WIDTH}")
                 options.add_argument(f"-height={HEIGHT}")
-                options.add_argument("-headless")
+
+                if headless:
+                    options.add_argument("-headless")
 
         match driver:
             case Driver.CHROME:
                 self.driver = webdriver.Chrome(options)
             case Driver.FIREFOX:
                 self.driver = webdriver.Firefox(options)
+
+        def signal_handler(sig, frame):
+            self.driver.quit()
+            sys.exit(1)
+
+        signal.signal(signal.SIGINT, signal_handler)
 
         self.driver.set_window_size(WIDTH, HEIGHT)  # just in case it wasn't set
 
@@ -66,6 +90,7 @@ class Archiver:
         self.output_dir = output_dir
         self.seen = set()
         self.max_posts = max_posts
+        self.members_only = members_only
 
     def filter_post_href(self, candidate: WebElement) -> bool:
         href = candidate.get_attribute("href")
@@ -92,6 +117,10 @@ class Archiver:
         is_members = bool(
             post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer")
         )
+
+        if self.members_only and (not is_members):
+            # print("Skipping as it is not a members post.")
+            return
 
         # Filter out the first link as it will always be the channel.
         links = list(
@@ -152,6 +181,8 @@ class Archiver:
             num_thumbs_up=num_thumbs_up,
             poll=poll,
         )
+
+        print(f"Handling {url}")
         post.save(self.output_dir)
         self.seen.add(url)
 
@@ -159,8 +190,8 @@ class Archiver:
         return self.max_posts is not None and len(self.seen) >= self.max_posts
 
     def scrape(self):
-        LOAD_SLEEP_SECS = 3
-        MAX_SAME_SEEN = 60
+        LOAD_SLEEP_SECS = 1
+        MAX_SAME_SEEN = 120
 
         try:
             self.driver.get(self.url)
@@ -198,7 +229,8 @@ class Archiver:
                 except:
                     continue
 
-                self.driver.execute_script("window.scrollBy(0, 250);")
+                self.driver.execute_script("window.scrollBy(0, 500);")
+                # self.driver.execute_script("window.scrollBy(0, 100000);")
                 time.sleep(LOAD_SLEEP_SECS)
 
                 new_seen = len(self.seen)
@@ -224,13 +256,28 @@ class Archiver:
 
 
 def main():
+
     parser = argparse.ArgumentParser(
         description="Archives YouTube community posts.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    
+
     parser.add_argument(
         "-o", "--output_dir", type=str, required=False, help="The directory to save to."
+    )
+    parser.add_argument(
+        "-p",
+        "--profile_dir",
+        type=str,
+        required=False,
+        help="The path to where your Chrome profiles are stored. Will not do anything if cookies are set.",
+    )
+    parser.add_argument(
+        "-n",
+        "--profile_name",
+        type=str,
+        required=False,
+        help="The profile you want to use. If not set and profile_dir is set, the default profile is used. Will not do anything if cookies are set.",
     )
     parser.add_argument(
         "-c",
@@ -265,6 +312,14 @@ def main():
         help="Specify which browser driver to use.",
         choices=["firefox", "chrome"],
     )
+    parser.add_argument(
+        "--members_only", help="Only save members posts.", action="store_true"
+    )
+    parser.add_argument(
+        "--not_headless",
+        help="Show the Chrome/Firefox browser window when scraping. May affect behaviour.",
+        action="store_true",
+    )
     parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
 
     args = parser.parse_args()
@@ -273,6 +328,10 @@ def main():
     cookie_path = args.cookie_path
     rerun = int(args.rerun) if args.rerun and int(args.rerun) > 0 else 1
     max_posts = int(args.max_posts) if args.max_posts else None
+    members_only = bool(args.members_only)
+    profile_dir = args.profile_dir
+    profile_name = args.profile_name
+    headless = not (args.not_headless)
 
     if args.driver is None or args.driver == "chrome":
         driver = Driver.CHROME
@@ -289,7 +348,11 @@ def main():
                 output_dir=output_dir,
                 cookie_path=cookie_path,
                 max_posts=max_posts,
+                headless=headless,
                 driver=driver,
+                members_only=members_only,
+                profile_dir=profile_dir,
+                profile_name=profile_name,
             ) as archiver:
                 if rerun > 1:
                     print(f"===== Run {i + 1} ======")
