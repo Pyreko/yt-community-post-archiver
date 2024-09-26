@@ -14,6 +14,7 @@ from post import Post, PollEntry
 from cookies import Cookie, parse_cookies
 import signal
 import sys
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 class Driver(Enum):
@@ -100,7 +101,27 @@ class Archiver:
         return False
 
     def find_posts(self) -> List[WebElement]:
-        posts = self.driver.find_elements(By.ID, "post")
+        posts = []
+
+        for potential_post in self.driver.find_elements(By.ID, "post"):
+            post_link = next(
+                filter(
+                    self.filter_post_href,
+                    potential_post.find_elements(By.TAG_NAME, "a"),
+                ),
+                None,
+            )
+            url = post_link.get_attribute("href")
+
+            if url is None:
+                continue
+
+            if url in self.seen:
+                continue
+
+            self.seen.add(url)
+            posts.append(potential_post)
+
         return posts
 
     def handle_post(self, post: WebElement) -> None:
@@ -109,7 +130,8 @@ class Archiver:
         )
 
         url = post_link.get_attribute("href")
-        if url in self.seen:
+
+        if url is None:
             return
 
         relative_date = post_link.text
@@ -191,8 +213,9 @@ class Archiver:
             ]
 
             if poll_reclick is not None:
-                if poll_reclick.is_displayed():
+                try:
                     poll_reclick.click()
+                finally:
                     poll_reclick = None
         else:
             poll = None
@@ -212,7 +235,6 @@ class Archiver:
 
         print(f"Handling {url}")
         post.save(self.output_dir)
-        self.seen.add(url)
 
     def at_max_posts(self) -> bool:
         return self.max_posts is not None and len(self.seen) >= self.max_posts
@@ -245,12 +267,15 @@ class Archiver:
             time.sleep(LOAD_SLEEP_SECS)
             num_seen = len(self.seen)
             same_seen = 0
+            action = ActionChains(self.driver)
 
             while True:
                 try:
                     posts = self.find_posts()
                     for post in posts:
+                        action.move_to_element(post).perform()
                         self.handle_post(post)
+
                         if self.at_max_posts():
                             print(f"Hit maximum posts ({self.max_posts}). Halting.")
                             return
