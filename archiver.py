@@ -158,6 +158,20 @@ class Archiver:
         text = text_elements[0].get_attribute("innerText")
 
         poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
+        poll_reclick = None
+        if poll_elements:
+            for p in poll_elements:
+                percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
+                if len(percentage) > 0:
+                    percentage_text = percentage[0].get_attribute("innerText")
+                    if len(percentage_text) == 0:
+                        # Try and click on the entry.
+                        poll_reclick = p
+                        p.click()
+                        time.sleep(0.5)
+                        break
+
+        poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
         if poll_elements:
             poll = [
                 PollEntry(p)
@@ -166,6 +180,11 @@ class Archiver:
                     (p.get_attribute("innerText") for p in poll_elements),
                 )
             ]
+
+            if poll_reclick is not None:
+                if poll_reclick.is_displayed():
+                    poll_reclick.click()
+                    poll_reclick = None
         else:
             poll = None
 
