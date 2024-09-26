@@ -188,18 +188,21 @@ class Archiver:
         text = text_elements[0].get_attribute("innerText")
 
         poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
+
+        # We want to click on the poll if we are signed in, and can't see a percentage.
         poll_reclick = None
-        if poll_elements:
-            for p in poll_elements:
-                percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
-                if len(percentage) > 0:
-                    percentage_text = percentage[0].get_attribute("innerText")
-                    if len(percentage_text) == 0:
-                        # Try and click on the entry.
-                        poll_reclick = p
-                        p.click()
-                        time.sleep(0.5)
-                        break
+        if self.driver.find_elements(By.ID, "avatar-btn"):
+            if poll_elements:
+                for p in poll_elements:
+                    percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
+                    if len(percentage) > 0:
+                        percentage_text = percentage[0].get_attribute("innerText")
+                        if len(percentage_text) == 0:
+                            # Try and click on the entry.
+                            poll_reclick = p
+                            p.click()
+                            time.sleep(0.5)
+                            break
 
         poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
         if poll_elements:
