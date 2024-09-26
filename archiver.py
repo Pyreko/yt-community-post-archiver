@@ -15,6 +15,7 @@ from cookies import Cookie, parse_cookies
 import signal
 import sys
 from selenium.webdriver.common.action_chains import ActionChains
+from datetime import timezone, datetime
 
 
 class Driver(Enum):
@@ -223,6 +224,7 @@ class Archiver:
             poll = None
 
         # We skip the first image since that's always the profile picture.
+        current_time = datetime.now(tz=timezone.utc)
         post = Post(
             url=url,
             text=text,
@@ -233,6 +235,7 @@ class Archiver:
             num_comments=num_comments,
             num_thumbs_up=num_thumbs_up,
             poll=poll,
+            when_archived=str(current_time),
         )
 
         print(f"Handling {url}")
