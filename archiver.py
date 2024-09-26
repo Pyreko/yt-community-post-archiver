@@ -135,6 +135,15 @@ class Archiver:
             )
         )[1:]
 
+        # To get all images, we may need to load them all. Look for a button indicating multiple images first, click it
+        # until it disappears, at which point all images should be loaded.
+
+        img_buttons = post.find_elements(By.ID, "right-arrow")
+        for img_button in img_buttons:
+            if "ytd-post-multi-image-renderer" in img_button.get_attribute("class"):
+                while img_button.is_displayed():
+                    img_button.click()
+
         images = [
             url.split("=")[0] + "=s3840"
             for url in filter(
