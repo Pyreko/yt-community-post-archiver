@@ -35,6 +35,7 @@ class Post:
     num_comments: Optional[str]
     num_thumbs_up: Optional[str]
     poll: Optional[List[PollEntry]]
+    when_archived: str
 
     def save(self, output_dir: str):
         id = self.url.split("/")[-1]
@@ -52,7 +53,14 @@ class Post:
         try:
             data_path = os.path.join(dir, "post.txt")
             with open(data_path, "w", encoding="utf-8") as f:
-                json.dump(self.__dict__, f, ensure_ascii=False, indent=4, default=lambda o: o.__dict__, skipkeys=True)
+                json.dump(
+                    self.__dict__,
+                    f,
+                    ensure_ascii=False,
+                    indent=4,
+                    default=lambda o: o.__dict__,
+                    skipkeys=True,
+                )
         except:
             print(f"err: couldn't save data dump at {data_path}")
 
