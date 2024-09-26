@@ -3,7 +3,7 @@
 from enum import Enum
 from pathlib import Path
 import time
-from typing import List, Optional, TypeVar
+from typing import List, Optional, Tuple, TypeVar
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
@@ -100,7 +100,7 @@ class Archiver:
 
         return False
 
-    def find_posts(self) -> List[WebElement]:
+    def find_posts(self) -> List[Tuple[WebElement, str]]:
         posts = []
 
         for potential_post in self.driver.find_elements(By.ID, "post"):
@@ -119,8 +119,7 @@ class Archiver:
             if url in self.seen:
                 continue
 
-            self.seen.add(url)
-            posts.append(potential_post)
+            posts.append((potential_post, url))
 
         return posts
 
@@ -272,9 +271,11 @@ class Archiver:
             while True:
                 try:
                     posts = self.find_posts()
-                    for post in posts:
+                    for post, url in posts:
                         action.move_to_element(post).perform()
                         self.handle_post(post)
+
+                        self.seen.add(url)
 
                         if self.at_max_posts():
                             print(f"Hit maximum posts ({self.max_posts}). Halting.")
