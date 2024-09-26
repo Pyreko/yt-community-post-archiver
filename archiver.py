@@ -3,7 +3,7 @@
 from enum import Enum
 from pathlib import Path
 import time
-from typing import List, Optional, TypeVar
+from typing import List, Optional, Tuple, TypeVar
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
@@ -14,6 +14,7 @@ from post import Post, PollEntry
 from cookies import Cookie, parse_cookies
 import signal
 import sys
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 class Driver(Enum):
@@ -99,8 +100,27 @@ class Archiver:
 
         return False
 
-    def find_posts(self) -> List[WebElement]:
-        posts = self.driver.find_elements(By.ID, "post")
+    def find_posts(self) -> List[Tuple[WebElement, str]]:
+        posts = []
+
+        for potential_post in self.driver.find_elements(By.ID, "post"):
+            post_link = next(
+                filter(
+                    self.filter_post_href,
+                    potential_post.find_elements(By.TAG_NAME, "a"),
+                ),
+                None,
+            )
+            url = post_link.get_attribute("href")
+
+            if url is None:
+                continue
+
+            if url in self.seen:
+                continue
+
+            posts.append((potential_post, url))
+
         return posts
 
     def handle_post(self, post: WebElement) -> None:
@@ -109,7 +129,8 @@ class Archiver:
         )
 
         url = post_link.get_attribute("href")
-        if url in self.seen:
+
+        if url is None:
             return
 
         relative_date = post_link.text
@@ -135,6 +156,15 @@ class Archiver:
             )
         )[1:]
 
+        # To get all images, we may need to load them all. Look for a button indicating multiple images first, click it
+        # until it disappears, at which point all images should be loaded.
+
+        img_buttons = post.find_elements(By.ID, "right-arrow")
+        for img_button in img_buttons:
+            if "ytd-post-multi-image-renderer" in img_button.get_attribute("class"):
+                while img_button.is_displayed():
+                    img_button.click()
+
         images = [
             url.split("=")[0] + "=s3840"
             for url in filter(
@@ -158,6 +188,23 @@ class Archiver:
         text = text_elements[0].get_attribute("innerText")
 
         poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
+
+        # We want to click on the poll if we are signed in, and can't see a percentage.
+        poll_reclick = None
+        if self.driver.find_elements(By.ID, "avatar-btn"):
+            if poll_elements:
+                for p in poll_elements:
+                    percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
+                    if len(percentage) > 0:
+                        percentage_text = percentage[0].get_attribute("innerText")
+                        if len(percentage_text) == 0:
+                            # Try and click on the entry.
+                            poll_reclick = p
+                            p.click()
+                            time.sleep(0.5)
+                            break
+
+        poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
         if poll_elements:
             poll = [
                 PollEntry(p)
@@ -166,6 +213,12 @@ class Archiver:
                     (p.get_attribute("innerText") for p in poll_elements),
                 )
             ]
+
+            if poll_reclick is not None:
+                try:
+                    poll_reclick.click()
+                finally:
+                    poll_reclick = None
         else:
             poll = None
 
@@ -184,7 +237,6 @@ class Archiver:
 
         print(f"Handling {url}")
         post.save(self.output_dir)
-        self.seen.add(url)
 
     def at_max_posts(self) -> bool:
         return self.max_posts is not None and len(self.seen) >= self.max_posts
@@ -217,12 +269,17 @@ class Archiver:
             time.sleep(LOAD_SLEEP_SECS)
             num_seen = len(self.seen)
             same_seen = 0
+            action = ActionChains(self.driver)
 
             while True:
                 try:
                     posts = self.find_posts()
-                    for post in posts:
+                    for post, url in posts:
+                        action.move_to_element(post).perform()
                         self.handle_post(post)
+
+                        self.seen.add(url)
+
                         if self.at_max_posts():
                             print(f"Hit maximum posts ({self.max_posts}). Halting.")
                             return
