@@ -50,9 +50,10 @@ If you want to set the save location, then use `-o`:
 python3 archiver.py "https://www.youtube.com/@IRyS/community" -o "/home/me/my_save"
 ```
 
-### Membership posts
+### Logging in
 
-Membership posts are a bit trickier and require having some way of showing YouTube that you're a member. This tool currently supports two methods:
+You may want to provide a logged-in instance to this tool as this is the only way to get membership posts or certain details like poll vote percentages.
+The tool supports two methods:
 
 #### Use browser profile
 
@@ -73,7 +74,9 @@ Another method is if you have a Netscape-format cookies file, which you can pass
 python3 archiver.py "https://www.youtube.com/@WatsonAmelia/community" -c "/home/me/my_cookies_file.txt"
 ```
 
-Note that I've personally found this much flakier and occasionally fails in certain situations.
+Note that I've personally found this much flakier and occasionally fails in certain situations. It should
+work fine if you just want to get a few posts though, and already have a cookie file for things like
+`ytarchive`.
 
 ### Use Firefox instead of Chrome as the driver
 
@@ -85,5 +88,13 @@ python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -d "firefo
 
 ## Notes
 
-- Poll vote percentages can only be shown if you are logged in due to how vote results are shown by YouTube.
-  - If you have not voted on the poll before, the tool will temporarily vote for you to grab vote percentages, but will then try to undo the vote to avoid messing with anything, but this isn't perfect!
+- Poll vote percentages can only be shown if you are logged in due to how vote results are only shown if the user has voted before.
+  - If you have not voted on the poll before, the tool will temporarily vote for you to grab vote percentages, but will then try to undo the
+    vote to avoid messing with anything, but this isn't perfect!
+
+## Other
+
+### How does this work?
+
+This is just a typical Selenium program, that's it. As such, it's simulating being a user and manually copying + formatting all the data. This
+is very evident if you disable headless mode, and see all the action.
