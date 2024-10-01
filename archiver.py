@@ -2,6 +2,7 @@
 
 from enum import Enum
 from pathlib import Path
+import shlex
 import time
 from typing import List, Optional, Tuple, TypeVar
 from selenium import webdriver
@@ -10,8 +11,9 @@ from selenium.webdriver.remote.webelement import WebElement
 import argparse
 import os
 import traceback
-from post import Post, PollEntry
-from cookies import Cookie, parse_cookies
+from arguments import get_args
+from post import Poll, Post, PollEntry
+from cookies import parse_cookies
 import signal
 import sys
 from selenium.webdriver.common.action_chains import ActionChains
@@ -177,8 +179,15 @@ class Archiver:
             )
         ]
 
-        comment_elements = post.find_elements(By.CSS_SELECTOR, "[aria-label=Comment]")
-        num_comments = comment_elements[0].text if comment_elements else None
+        comment_elements = post.find_elements(By.ID, "reply-button-end")
+        approximate_num_comments = (
+            comment_elements[0].text.strip().split("\n")[0].strip()
+            if comment_elements
+            else None
+        )
+
+        # TODO: We may need to grab it another way (e.g. if we are on a post link itself)
+        # This is actually more accurate.
 
         thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
         num_thumbs_up = thumbs_elements[0].text if thumbs_elements else None
@@ -207,7 +216,7 @@ class Archiver:
 
         poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
         if poll_elements:
-            poll = [
+            poll_entries = [
                 PollEntry(p)
                 for p in filter(
                     lambda p: p is not None,
@@ -220,6 +229,14 @@ class Archiver:
                     poll_reclick.click()
                 finally:
                     poll_reclick = None
+
+            poll_total_votes_ele = post.find_elements(By.ID, "vote-info")
+            if poll_total_votes_ele:
+                poll_total_votes = poll_total_votes_ele[0].text
+            else:
+                poll_total_votes = None
+
+            poll = Poll(poll_entries, poll_total_votes)
         else:
             poll = None
 
@@ -232,7 +249,7 @@ class Archiver:
             images=images[1:],
             is_members=is_members,
             relative_date=relative_date,
-            num_comments=num_comments,
+            approximate_num_comments=approximate_num_comments,
             num_thumbs_up=num_thumbs_up,
             poll=poll,
             when_archived=str(current_time),
@@ -316,74 +333,10 @@ class Archiver:
 
 
 def main():
+    args = get_args()
 
-    parser = argparse.ArgumentParser(
-        description="Archives YouTube community posts.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-
-    parser.add_argument(
-        "-o", "--output_dir", type=str, required=False, help="The directory to save to."
-    )
-    parser.add_argument(
-        "-p",
-        "--profile_dir",
-        type=str,
-        required=False,
-        help="The path to where your Chrome profiles are stored. Will not do anything if cookies are set.",
-    )
-    parser.add_argument(
-        "-n",
-        "--profile_name",
-        type=str,
-        required=False,
-        help="The profile you want to use. If not set and profile_dir is set, the default profile is used. Will not do anything if cookies are set.",
-    )
-    parser.add_argument(
-        "-c",
-        "--cookie_path",
-        type=str,
-        required=False,
-        default=None,
-        help="The path to a cookies file in the Netscape format.",
-    )
-    parser.add_argument(
-        "-r",
-        "--rerun",
-        type=str,
-        required=False,
-        default=1,
-        help="How many times to rerun the archiver. Must be greater than 0.",
-    )
-    parser.add_argument(
-        "-m",
-        "--max_posts",
-        type=str,
-        required=False,
-        default=None,
-        help="Set a limit on how many posts to download.",
-    )
-    parser.add_argument(
-        "-d",
-        "--driver",
-        type=str,
-        required=False,
-        default="chrome",
-        help="Specify which browser driver to use.",
-        choices=["firefox", "chrome"],
-    )
-    parser.add_argument(
-        "--members_only", help="Only save members posts.", action="store_true"
-    )
-    parser.add_argument(
-        "--not_headless",
-        help="Show the Chrome/Firefox browser window when scraping. May affect behaviour.",
-        action="store_true",
-    )
-    parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
-
-    args = parser.parse_args()
-    url = args.url
+    # Hack to handle backslashes.
+    url = shlex.split(args.url)[0]
     output_dir = args.output_dir
     cookie_path = args.cookie_path
     rerun = int(args.rerun) if args.rerun and int(args.rerun) > 0 else 1
