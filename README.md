@@ -47,18 +47,40 @@ me know if it's broken, and if I have the bandwidth I'll try and fix it.
 If you want to set the save location, then use `-o`:
 
 ```shell
-python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -o "/home/me/my_save"
+python3 archiver.py "https://www.youtube.com/@IRyS/community" -o "/home/me/my_save"
 ```
 
-### Use cookies file
+### Logging in
 
-If you want to grab membership posts, you'll need to have a Netscape-format cookies file, which you can pass the path with `-c`:
+You may want to provide a logged-in instance to this tool as this is the only way to get membership posts or certain details like poll vote percentages.
+The tool supports two methods:
+
+#### Use browser profile
+
+You can re-use an existing browser profile that is logged into your YouTube account to grab membership posts with the `-p` flag, where the path is where
+your user profiles are located (for example, in Chrome, you can find this with `chrome://version`). For example:
 
 ```shell
-python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -c "/home/me/my_cookies_file.txt"
+venv/bin/python archiver.py -o output/ -p ~/.config/chromium/  "https://www.youtube.com/@WatsonAmelia/membership"
 ```
 
+By default this will use the default profile name; if you need to override this then use `-n` as well.
+
+#### Use cookies file
+
+Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c`:
+
+```shell
+python3 archiver.py "https://www.youtube.com/@WatsonAmelia/community" -c "/home/me/my_cookies_file.txt"
+```
+
+Note that I've personally found this much flakier and occasionally fails in certain situations. It should
+work fine if you just want to get a few posts though, and already have a cookie file for things like
+`ytarchive`.
+
 ### Use Firefox instead of Chrome as the driver
+
+The default driver is Chrome, but Firefox should work as well.
 
 ```shell
 python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -d "firefox"
@@ -66,4 +88,13 @@ python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -d "firefo
 
 ## Notes
 
-- Poll vote percentages can only be shown if you are logged in and have voted on the poll before.
+- Poll vote percentages can only be shown if you are logged in due to how vote results are only shown if the user has voted before.
+  - If you have not voted on the poll before, the tool will temporarily vote for you to grab vote percentages, but will then try to undo the
+    vote to avoid messing with anything, but this isn't perfect!
+
+## Other
+
+### How does this work?
+
+This is just a typical Selenium program, that's it. As such, it's simulating being a user and manually copying + formatting all the data. This
+is very evident if you disable headless mode, and see all the action.
