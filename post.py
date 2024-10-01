@@ -3,6 +3,7 @@ from typing import List, Optional
 import requests
 import json
 from dataclasses import dataclass
+import filetype
 
 
 class PollEntry:
@@ -72,11 +73,13 @@ class Post:
 
         for itx, image in enumerate(self.images):
             try:
-                img_name = f"{id}-{itx}.png"
+                img_data = requests.get(image).content
+                img_format = filetype.guess(img_data)
+                img_extension = img_format.extension if img_format else "png"
+                img_name = f"{id}-{itx}.{img_extension}"
                 img_path = os.path.join(dir, img_name)
 
                 if not os.path.exists(img_path):
-                    img_data = requests.get(image).content
                     with open(img_path, "wb") as f:
                         f.write(img_data)
                 else:
