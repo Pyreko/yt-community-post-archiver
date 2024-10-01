@@ -8,25 +8,25 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-o", "--output_dir", type=str, required=False, help="The directory to save to."
+        "-o", "--output-dir", type=str, required=False, help="The directory to save to."
     )
     parser.add_argument(
         "-p",
-        "--profile_dir",
+        "--profile-dir",
         type=str,
         required=False,
         help="The path to where your Chrome profiles are stored. Will not do anything if cookies are set.",
     )
     parser.add_argument(
         "-n",
-        "--profile_name",
+        "--profile-name",
         type=str,
         required=False,
         help="The profile you want to use. If not set and profile_dir is set, the default profile is used. Will not do anything if cookies are set.",
     )
     parser.add_argument(
         "-c",
-        "--cookie_path",
+        "--cookie-path",
         type=str,
         required=False,
         default=None,
@@ -42,7 +42,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "-m",
-        "--max_posts",
+        "--max-posts",
         type=str,
         required=False,
         default=None,
@@ -58,10 +58,10 @@ def get_args() -> argparse.Namespace:
         choices=["firefox", "chrome"],
     )
     parser.add_argument(
-        "--members_only", help="Only save members posts.", action="store_true"
+        "--members-only", help="Only save members posts.", action="store_true"
     )
     parser.add_argument(
-        "--not_headless",
+        "--not-headless",
         help="Show the Chrome/Firefox browser window when scraping. May affect behaviour.",
         action="store_true",
     )
