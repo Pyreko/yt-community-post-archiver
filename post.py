@@ -12,12 +12,18 @@ class PollEntry:
         try:
             self.option = split[0]
         except:
-            self.option = "N/A"
+            self.option = None
 
         try:
             self.percentage = int(split[1].split("%")[0])
         except:
-            self.percentage = "N/A"
+            self.percentage = None
+
+
+@dataclass
+class Poll:
+    entries: List[PollEntry]
+    total_votes: Optional[str]
 
 
 @dataclass
@@ -34,7 +40,7 @@ class Post:
     relative_date: str
     num_comments: Optional[str]
     num_thumbs_up: Optional[str]
-    poll: Optional[List[PollEntry]]
+    poll: Optional[Poll]
     when_archived: str
 
     def save(self, output_dir: str):
