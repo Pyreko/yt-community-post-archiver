@@ -30,3 +30,30 @@ def test_basic_works(tmp_path):
             num_files += 1
 
     assert num_files == to_download
+
+
+def test_poll(tmp_path):
+    """Simple testing to make sure we can download a poll. This does not verify validity or anything."""
+
+    subprocess.run(
+        [
+            "python3",
+            "archiver.py",
+            "https://www.youtube.com/post/UgkxeuDjcdp6k56ltsrTvTAHhz0IokY3kOkn",
+            "-o",
+            tmp_path,
+            "-m",
+            "1",
+        ],
+        check=True,
+    )
+
+    if not os.path.isdir(tmp_path):
+        sys.exit(1)
+
+    num_files = 0
+    for _, _, files in os.walk(tmp_path):
+        if "post.txt" in files:
+            num_files += 1
+
+    assert num_files == 1

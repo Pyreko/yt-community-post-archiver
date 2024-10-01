@@ -179,8 +179,15 @@ class Archiver:
             )
         ]
 
-        comment_elements = post.find_elements(By.CSS_SELECTOR, "[aria-label=Comment]")
-        num_comments = comment_elements[0].text if comment_elements else None
+        comment_elements = post.find_elements(By.ID, "reply-button-end")
+        approximate_num_comments = (
+            comment_elements[0].text.strip().split("\n")[0].strip()
+            if comment_elements
+            else None
+        )
+
+        # TODO: We may need to grab it another way (e.g. if we are on a post link itself)
+        # This is actually more accurate.
 
         thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
         num_thumbs_up = thumbs_elements[0].text if thumbs_elements else None
@@ -242,7 +249,7 @@ class Archiver:
             images=images[1:],
             is_members=is_members,
             relative_date=relative_date,
-            num_comments=num_comments,
+            approximate_num_comments=approximate_num_comments,
             num_thumbs_up=num_thumbs_up,
             poll=poll,
             when_archived=str(current_time),
@@ -284,26 +291,7 @@ class Archiver:
             same_seen = 0
             action = ActionChains(self.driver)
 
-            MAX_WRONG_URL = 5
-            wrong_url = 0
-
             while True:
-                # Assert we're on the passed-in URL... if not, refresh up to 5 times and try again.
-                if self.driver.current_url != self.url:
-                    wrong_url += 1
-
-                    if wrong_url >= MAX_WRONG_URL:
-                        print(
-                            f"keep seeing the wrong URL (seeing `{self.driver.current_url}`, want `{self.url}`), halting"
-                        )
-                        return
-                    else:
-                        self.driver.get(self.url)
-                        time.sleep(LOAD_SLEEP_SECS)
-                        continue
-                else:
-                    wrong_url = 0
-
                 try:
                     posts = self.find_posts()
                     for post, url in posts:

@@ -38,7 +38,7 @@ class Post:
     links: List[str]
     is_members: bool
     relative_date: str
-    num_comments: Optional[str]
+    approximate_num_comments: Optional[str]
     num_thumbs_up: Optional[str]
     poll: Optional[Poll]
     when_archived: str
