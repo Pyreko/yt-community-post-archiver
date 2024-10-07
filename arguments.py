@@ -58,12 +58,17 @@ def get_args() -> argparse.Namespace:
         choices=["firefox", "chrome"],
     )
     parser.add_argument(
-        "--members-only", help="Only save members posts.", action="store_true"
+        "--members-only", action="store_true", help="Only save members posts."
     )
     parser.add_argument(
         "--not-headless",
         help="Show the Chrome/Firefox browser window when scraping. May affect behaviour.",
         action="store_true",
+    )
+    parser.add_argument(
+        "--extended",
+        action="store_true",
+        help="Save additional information about the post.",
     )
     parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
 

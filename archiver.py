@@ -1,14 +1,11 @@
 #!/usr/bin/python
 
-from enum import Enum
 from pathlib import Path
 import shlex
 import time
-from typing import List, Optional, Tuple, TypeVar
-from selenium import webdriver
+from typing import List, Optional, Tuple
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-import argparse
 import os
 import traceback
 from arguments import get_args
@@ -18,15 +15,7 @@ import signal
 import sys
 from selenium.webdriver.common.action_chains import ActionChains
 from datetime import timezone, datetime
-
-
-class Driver(Enum):
-    """
-    The backing browser to use for scraping.
-    """
-
-    FIREFOX = 1
-    CHROME = 2
+from helpers import Driver, init_driver, get_post_link
 
 
 class Archiver:
@@ -45,35 +34,9 @@ class Archiver:
         WIDTH = 1920
         HEIGHT = 1080
 
-        match driver:
-            case Driver.CHROME:
-                options = webdriver.ChromeOptions()
-                options.add_argument(f"--window-size={WIDTH},{HEIGHT}")
-                options.add_argument("--disable-gpu")
-
-                if headless:
-                    options.add_argument("--headless")
-
-                if profile_dir:
-                    profile_name = (
-                        profile_name if profile_name is not None else "Default"
-                    )
-
-                    options.add_argument(f"--user-data-dir={profile_dir}")
-                    options.add_argument(f"--profile-directory={profile_name}")
-            case Driver.FIREFOX:
-                options = webdriver.FirefoxOptions()
-                options.add_argument(f"-width={WIDTH}")
-                options.add_argument(f"-height={HEIGHT}")
-
-                if headless:
-                    options.add_argument("-headless")
-
-        match driver:
-            case Driver.CHROME:
-                self.driver = webdriver.Chrome(options)
-            case Driver.FIREFOX:
-                self.driver = webdriver.Firefox(options)
+        self.driver = init_driver(
+            driver, headless, profile_dir, profile_name, WIDTH, HEIGHT
+        )
 
         def signal_handler(sig, frame):
             self.driver.quit()
@@ -86,8 +49,7 @@ class Archiver:
         # Make sure the output directory exists... if not, then try and make it.
         output_dir = "archive-output" if output_dir is None else output_dir
         if output_dir is not None:
-            if not os.path.isdir(output_dir):
-                os.mkdir(output_dir)
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         self.cookie_path = cookie_path
         self.url = url
@@ -96,44 +58,25 @@ class Archiver:
         self.max_posts = max_posts
         self.members_only = members_only
 
-    def filter_post_href(self, candidate: WebElement) -> bool:
-        href = candidate.get_attribute("href")
-        if href is not None:
-            return "https://www.youtube.com/post/" in href
-
-        return False
-
     def find_posts(self) -> List[Tuple[WebElement, str]]:
         posts = []
 
         for potential_post in self.driver.find_elements(By.ID, "post"):
-            post_link = next(
-                filter(
-                    self.filter_post_href,
-                    potential_post.find_elements(By.TAG_NAME, "a"),
-                ),
-                None,
-            )
-            url = post_link.get_attribute("href")
-
-            if url is None:
+            post_link = get_post_link(potential_post)
+            if post_link is None:
                 continue
 
-            if url in self.seen:
+            url = post_link.get_attribute("href")
+            if url is None or url in self.seen:
                 continue
 
             posts.append((potential_post, url))
 
         return posts
 
-    def handle_post(self, post: WebElement) -> None:
-        post_link = next(
-            filter(self.filter_post_href, post.find_elements(By.TAG_NAME, "a")), None
-        )
-
-        url = post_link.get_attribute("href")
-
-        if url is None:
+    def handle_post(self, post: WebElement, url: str) -> None:
+        post_link = get_post_link(post)
+        if post_link is None:
             return
 
         relative_date = post_link.text
@@ -296,7 +239,7 @@ class Archiver:
                     posts = self.find_posts()
                     for post, url in posts:
                         action.move_to_element(post).perform()
-                        self.handle_post(post)
+                        self.handle_post(post, url)
 
                         self.seen.add(url)
 
@@ -307,7 +250,6 @@ class Archiver:
                     continue
 
                 self.driver.execute_script("window.scrollBy(0, 500);")
-                # self.driver.execute_script("window.scrollBy(0, 100000);")
                 time.sleep(LOAD_SLEEP_SECS)
 
                 new_seen = len(self.seen)
