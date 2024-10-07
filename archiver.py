@@ -1,45 +1,53 @@
 #!/usr/bin/python
 
+from ctypes import c_bool
+from multiprocessing import Value
 from pathlib import Path
-import shlex
 import time
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 import os
 import traceback
-from arguments import get_args
-from post import Poll, Post, PollEntry
+from arguments import ArchiverSettings, get_settings
+from extended import ExtendedArchiver
+from post import Poll, Post, PollEntry, get_post_id
 from cookies import parse_cookies
 import signal
 import sys
 from selenium.webdriver.common.action_chains import ActionChains
 from datetime import timezone, datetime
-from helpers import Driver, init_driver, get_post_link
+from helpers import (
+    get_comment_count,
+    init_driver,
+    get_post_link,
+    is_members_post,
+)
 
 
 class Archiver:
-    def __init__(
-        self,
-        url: str,
-        output_dir: Optional[str],
-        members_only: bool,
-        headless: bool,
-        cookie_path: Optional[str] = None,
-        max_posts: Optional[str] = None,
-        profile_dir: Optional[str] = None,
-        profile_name: Optional[str] = None,
-        driver: Driver = Driver.CHROME,
-    ) -> None:
+    """
+    The main archiver "task"; this handles the overall job of archiving community posts from a URL.
+    """
+
+    def __init__(self, settings: ArchiverSettings) -> None:
         WIDTH = 1920
         HEIGHT = 1080
 
         self.driver = init_driver(
-            driver, headless, profile_dir, profile_name, WIDTH, HEIGHT
+            settings.driver,
+            settings.headless,
+            settings.profile_dir,
+            settings.profile_name,
+            WIDTH,
+            HEIGHT,
         )
+        self.cancellation_token = Value(c_bool, False)
 
-        def signal_handler(sig, frame):
+        def signal_handler(sig_num, frame):
             self.driver.quit()
+            with self.cancellation_token.get_lock():
+                self.cancellation_token.value = False
             sys.exit(1)
 
         signal.signal(signal.SIGINT, signal_handler)
@@ -47,16 +55,31 @@ class Archiver:
         self.driver.set_window_size(WIDTH, HEIGHT)  # just in case it wasn't set
 
         # Make sure the output directory exists... if not, then try and make it.
-        output_dir = "archive-output" if output_dir is None else output_dir
-        if output_dir is not None:
+        output_dir = settings.output_dir or "archive-output"
+        if settings.output_dir is not None:
             Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        self.cookie_path = cookie_path
-        self.url = url
+        self.cookie_path = settings.cookie_path
+        self.url = settings.url
         self.output_dir = output_dir
         self.seen = set()
-        self.max_posts = max_posts
-        self.members_only = members_only
+        self.max_posts = settings.max_posts
+        self.members_only = settings.members_only
+        self.extended_archiver = (
+            ExtendedArchiver(
+                self.cancellation_token,
+                settings.headless,
+                settings.cookie_path,
+                settings.profile_dir,
+                settings.profile_name,
+                settings.driver,
+                WIDTH,
+                HEIGHT,
+            )
+            if settings.is_extended()
+            else None
+        )
+        self.skip_existing = settings.skip_existing
 
     def find_posts(self) -> List[Tuple[WebElement, str]]:
         posts = []
@@ -81,9 +104,7 @@ class Archiver:
 
         relative_date = post_link.text
 
-        is_members = bool(
-            post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer")
-        )
+        is_members = is_members_post(post)
 
         if self.members_only and (not is_members):
             # print("Skipping as it is not a members post.")
@@ -104,7 +125,6 @@ class Archiver:
 
         # To get all images, we may need to load them all. Look for a button indicating multiple images first, click it
         # until it disappears, at which point all images should be loaded.
-
         img_buttons = post.find_elements(By.ID, "right-arrow")
         for img_button in img_buttons:
             if "ytd-post-multi-image-renderer" in img_button.get_attribute("class"):
@@ -129,8 +149,7 @@ class Archiver:
             else None
         )
 
-        # TODO: We may need to grab it another way (e.g. if we are on a post link itself)
-        # This is actually more accurate.
+        num_comments = get_comment_count(self.driver)
 
         thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
         num_thumbs_up = thumbs_elements[0].text if thumbs_elements else None
@@ -193,6 +212,7 @@ class Archiver:
             is_members=is_members,
             relative_date=relative_date,
             approximate_num_comments=approximate_num_comments,
+            num_comments=num_comments,
             num_thumbs_up=num_thumbs_up,
             poll=poll,
             when_archived=str(current_time),
@@ -238,10 +258,16 @@ class Archiver:
                 try:
                     posts = self.find_posts()
                     for post, url in posts:
-                        action.move_to_element(post).perform()
-                        self.handle_post(post, url)
+                        if not self.should_skip_post(url):
+                            action.move_to_element(post).perform()
+                            self.handle_post(post, url)
+                        else:
+                            print(f"Skipping `{url}` as it already exists.")
 
                         self.seen.add(url)
+
+                        if self.extended_archiver is not None:
+                            self.extended_archiver.add_url(url)
 
                         if self.at_max_posts():
                             print(f"Hit maximum posts ({self.max_posts}). Halting.")
@@ -267,48 +293,35 @@ class Archiver:
             print("Encountered a fatal error:")
             traceback.print_exc()
 
+    def should_skip_post(self, url: str) -> bool:
+        """
+        If we have skip_existing set, then we want to skip posts if the path already exists.
+        """
+
+        if not self.skip_existing:
+            return False
+
+        id = get_post_id(url)
+        dir = os.path.join(self.output_dir, id)
+
+        return Path(dir).exists()
+
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        with self.cancellation_token.get_lock():
+            self.cancellation_token.value = False
         self.driver.quit()
 
 
 def main():
-    args = get_args()
-
-    # Hack to handle backslashes.
-    url = shlex.split(args.url)[0]
-    output_dir = args.output_dir
-    cookie_path = args.cookie_path
-    rerun = int(args.rerun) if args.rerun and int(args.rerun) > 0 else 1
-    max_posts = int(args.max_posts) if args.max_posts else None
-    members_only = bool(args.members_only)
-    profile_dir = args.profile_dir
-    profile_name = args.profile_name
-    headless = not (args.not_headless)
-
-    if args.driver is None or args.driver == "chrome":
-        driver = Driver.CHROME
-    elif args.driver == "firefox":
-        driver = Driver.FIREFOX
-    else:
-        raise Exception("Unsupported driver type!")
+    (settings, rerun) = get_settings()
 
     try:
-        print(f"Running the archiver {rerun} time(s) on `{url}`...")
+        print(f"Running the archiver {rerun} time(s) on `{settings.url}`...")
         for i in range(rerun):
-            with Archiver(
-                url=url,
-                output_dir=output_dir,
-                cookie_path=cookie_path,
-                max_posts=max_posts,
-                headless=headless,
-                driver=driver,
-                members_only=members_only,
-                profile_dir=profile_dir,
-                profile_name=profile_name,
-            ) as archiver:
+            with Archiver(settings) as archiver:
                 if rerun > 1:
                     print(f"===== Run {i + 1} ======")
                 archiver.scrape()

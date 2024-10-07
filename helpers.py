@@ -6,6 +6,8 @@ from typing import Optional
 from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
+from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 
 
 class Driver(Enum):
@@ -74,3 +76,19 @@ def get_post_link(element: WebElement) -> Optional[WebElement]:
         ),
         None,
     )
+
+
+def get_comment_count(
+    driver: ChromeWebDriver | FirefoxWebDriver,
+) -> Optional[str]:
+    comment_elements = driver.find_elements(By.TAG_NAME, "ytd-comments")
+    if comment_elements:
+        count = comment_elements[0].find_elements(By.ID, "count")
+        if count:
+            return count[0].text.split()[0]
+
+    return None
+
+
+def is_members_post(post: WebElement) -> bool:
+    return bool(post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer"))
