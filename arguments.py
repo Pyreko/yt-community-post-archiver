@@ -22,9 +22,6 @@ class ArchiverSettings:
     skip_existing: bool
     # max_tasks: int
 
-    def is_extended(self) -> bool:
-        return self.save_comments or self.take_screenshots
-
 
 def _create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
