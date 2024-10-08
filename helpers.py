@@ -1,9 +1,8 @@
 # A series of helper functions to avoid cluttering the main archiver code file.
 
-
 from enum import Enum
 import time
-from typing import Optional
+from typing import Optional, Union
 from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
@@ -22,9 +21,6 @@ class Driver(Enum):
     CHROME = 2
 
 
-type WebDriver = ChromeWebDriver | FirefoxWebDriver
-
-
 def init_driver(
     driver: Driver,
     headless: bool,
@@ -32,7 +28,7 @@ def init_driver(
     profile_name: Optional[str],
     width: int,
     height: int,
-) -> WebDriver:
+) -> Union[ChromeWebDriver, FirefoxWebDriver]:
     """
     Initialize the driver and return it, based on the settings passed.
     """
@@ -85,7 +81,7 @@ def get_post_link(element: WebElement) -> Optional[WebElement]:
 
 
 def get_comment_count(
-    driver: WebDriver,
+    driver: Union[ChromeWebDriver, FirefoxWebDriver],
 ) -> Optional[str]:
     comment_elements = driver.find_elements(By.TAG_NAME, "ytd-comments")
     if comment_elements:
@@ -100,7 +96,9 @@ def is_members_post(post: WebElement) -> bool:
     return bool(post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer"))
 
 
-def get_poll(post: WebElement, driver: WebDriver) -> Optional[Poll]:
+def get_poll(
+    post: WebElement, driver: Union[ChromeWebDriver, FirefoxWebDriver]
+) -> Optional[Poll]:
     poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
     if poll_elements:
         # We want to click on the poll if we are signed in, and can't see a percentage.
