@@ -1,146 +1,115 @@
 #!/usr/bin/python
 
-from enum import Enum
 from pathlib import Path
-import shlex
 import time
-from typing import List, Optional, Tuple, TypeVar
-from selenium import webdriver
+from typing import List, Optional, Tuple
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-import argparse
 import os
 import traceback
-from arguments import get_args
-from post import Poll, Post, PollEntry
+from arguments import ArchiverSettings, get_settings
+from post import Post, get_post_id
 from cookies import parse_cookies
 import signal
 import sys
 from selenium.webdriver.common.action_chains import ActionChains
 from datetime import timezone, datetime
+from helpers import (
+    get_comment_count,
+    get_poll,
+    init_driver,
+    get_post_link,
+    is_members_post,
+)
 
-
-class Driver(Enum):
-    """
-    The backing browser to use for scraping.
-    """
-
-    FIREFOX = 1
-    CHROME = 2
+LOAD_SLEEP_SECS = 1
 
 
 class Archiver:
-    def __init__(
-        self,
-        url: str,
-        output_dir: Optional[str],
-        members_only: bool,
-        headless: bool,
-        cookie_path: Optional[str] = None,
-        max_posts: Optional[str] = None,
-        profile_dir: Optional[str] = None,
-        profile_name: Optional[str] = None,
-        driver: Driver = Driver.CHROME,
-    ) -> None:
-        WIDTH = 1920
-        HEIGHT = 1080
+    """
+    The main archiver "task"; this handles the overall job of archiving community posts from a URL.
+    """
 
-        match driver:
-            case Driver.CHROME:
-                options = webdriver.ChromeOptions()
-                options.add_argument(f"--window-size={WIDTH},{HEIGHT}")
-                options.add_argument("--disable-gpu")
+    def __init__(self, settings: ArchiverSettings) -> None:
+        if settings.headless and settings.take_screenshots:
+            # I found these good settings for general archiving + screenshots
+            width = 1080
+            height = 1920
+        else:
+            # If not headless, this might need to be tweaked.
+            width = 1920
+            height = 1080
 
-                if headless:
-                    options.add_argument("--headless")
+        self.driver = init_driver(
+            settings.driver,
+            settings.headless,
+            settings.profile_dir,
+            settings.profile_name,
+            width,
+            height,
+        )
 
-                if profile_dir:
-                    profile_name = (
-                        profile_name if profile_name is not None else "Default"
-                    )
-
-                    options.add_argument(f"--user-data-dir={profile_dir}")
-                    options.add_argument(f"--profile-directory={profile_name}")
-            case Driver.FIREFOX:
-                options = webdriver.FirefoxOptions()
-                options.add_argument(f"-width={WIDTH}")
-                options.add_argument(f"-height={HEIGHT}")
-
-                if headless:
-                    options.add_argument("-headless")
-
-        match driver:
-            case Driver.CHROME:
-                self.driver = webdriver.Chrome(options)
-            case Driver.FIREFOX:
-                self.driver = webdriver.Firefox(options)
-
-        def signal_handler(sig, frame):
+        def signal_handler(sig_num, frame):
             self.driver.quit()
             sys.exit(1)
 
         signal.signal(signal.SIGINT, signal_handler)
 
-        self.driver.set_window_size(WIDTH, HEIGHT)  # just in case it wasn't set
+        self.driver.set_window_size(width, height)  # just in case it wasn't set
 
         # Make sure the output directory exists... if not, then try and make it.
-        output_dir = "archive-output" if output_dir is None else output_dir
-        if output_dir is not None:
-            if not os.path.isdir(output_dir):
-                os.mkdir(output_dir)
+        output_dir = settings.output_dir or "archive-output"
+        if settings.output_dir is not None:
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        self.cookie_path = cookie_path
-        self.url = url
+        self.cookie_path = settings.cookie_path
+        self.url = settings.url
         self.output_dir = output_dir
         self.seen = set()
-        self.max_posts = max_posts
-        self.members_only = members_only
-
-    def filter_post_href(self, candidate: WebElement) -> bool:
-        href = candidate.get_attribute("href")
-        if href is not None:
-            return "https://www.youtube.com/post/" in href
-
-        return False
+        self.max_posts = settings.max_posts
+        self.members_only = settings.members_only
+        self.skip_existing = settings.skip_existing
+        self.take_screenshots = settings.take_screenshots
+        self.action = ActionChains(self.driver)
 
     def find_posts(self) -> List[Tuple[WebElement, str]]:
         posts = []
 
         for potential_post in self.driver.find_elements(By.ID, "post"):
-            post_link = next(
-                filter(
-                    self.filter_post_href,
-                    potential_post.find_elements(By.TAG_NAME, "a"),
-                ),
-                None,
-            )
-            url = post_link.get_attribute("href")
-
-            if url is None:
+            post_link = get_post_link(potential_post)
+            if post_link is None:
                 continue
 
-            if url in self.seen:
+            url = post_link.get_attribute("href")
+            if url is None or url in self.seen:
                 continue
 
             posts.append((potential_post, url))
 
         return posts
 
-    def handle_post(self, post: WebElement) -> None:
-        post_link = next(
-            filter(self.filter_post_href, post.find_elements(By.TAG_NAME, "a")), None
-        )
+    def open_post_in_tab(self, url: str) -> Optional[WebElement]:
+        self.driver.switch_to.new_window("tab")
+        self.driver.get(url)
+        time.sleep(LOAD_SLEEP_SECS)
+        potential_posts = self.driver.find_elements(By.ID, "post")
+        if not potential_posts:
+            return None
 
-        url = post_link.get_attribute("href")
+        post = potential_posts[0]
 
-        if url is None:
+        return post
+
+    def handle_post(self, post: WebElement, url: str):
+        print(f"Handling `{url}`")
+
+        post_link = get_post_link(post)
+        if post_link is None:
             return
 
         relative_date = post_link.text
 
-        is_members = bool(
-            post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer")
-        )
+        is_members = is_members_post(post)
 
         if self.members_only and (not is_members):
             # print("Skipping as it is not a members post.")
@@ -161,7 +130,6 @@ class Archiver:
 
         # To get all images, we may need to load them all. Look for a button indicating multiple images first, click it
         # until it disappears, at which point all images should be loaded.
-
         img_buttons = post.find_elements(By.ID, "right-arrow")
         for img_button in img_buttons:
             if "ytd-post-multi-image-renderer" in img_button.get_attribute("class"):
@@ -186,9 +154,6 @@ class Archiver:
             else None
         )
 
-        # TODO: We may need to grab it another way (e.g. if we are on a post link itself)
-        # This is actually more accurate.
-
         thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
         num_thumbs_up = thumbs_elements[0].text if thumbs_elements else None
 
@@ -197,72 +162,56 @@ class Archiver:
             return
         text = text_elements[0].get_attribute("innerText")
 
-        poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
+        poll = get_poll(post, self.driver)
 
-        # We want to click on the poll if we are signed in, and can't see a percentage.
-        poll_reclick = None
-        if self.driver.find_elements(By.ID, "avatar-btn"):
-            if poll_elements:
-                for p in poll_elements:
-                    percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
-                    if len(percentage) > 0:
-                        percentage_text = percentage[0].get_attribute("innerText")
-                        if len(percentage_text) == 0:
-                            # Try and click on the entry.
-                            poll_reclick = p
-                            p.click()
-                            time.sleep(0.5)
-                            break
+        # The following block may require opening things in a new tab.
+        num_comments = get_comment_count(self.driver)
+        need_new_tab = num_comments is None
 
-        poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
-        if poll_elements:
-            poll_entries = [
-                PollEntry(p)
-                for p in filter(
-                    lambda p: p is not None,
-                    (p.get_attribute("innerText") for p in poll_elements),
-                )
-            ]
+        if need_new_tab:
+            new_tab_post = self.open_post_in_tab(url)
+            num_comments = get_comment_count(self.driver)
 
-            if poll_reclick is not None:
-                try:
-                    poll_reclick.click()
-                finally:
-                    poll_reclick = None
-
-            poll_total_votes_ele = post.find_elements(By.ID, "vote-info")
-            if poll_total_votes_ele:
-                poll_total_votes = poll_total_votes_ele[0].text
-            else:
-                poll_total_votes = None
-
-            poll = Poll(poll_entries, poll_total_votes)
-        else:
-            poll = None
-
-        # We skip the first image since that's always the profile picture.
         current_time = datetime.now(tz=timezone.utc)
         post = Post(
             url=url,
             text=text,
             links=links,
+            # We skip the first image since that's always the profile picture.
             images=images[1:],
             is_members=is_members,
             relative_date=relative_date,
             approximate_num_comments=approximate_num_comments,
+            num_comments=num_comments,
             num_thumbs_up=num_thumbs_up,
             poll=poll,
             when_archived=str(current_time),
         )
 
-        print(f"Handling {url}")
         post.save(self.output_dir)
+
+        if self.take_screenshots:
+            if new_tab_post is not None:
+                more = new_tab_post.find_elements(By.CLASS_NAME, "more-button")
+                if more:
+                    self.action.move_to_element(more[0])
+                    if more[0].is_displayed():
+                        more[0].click()
+
+            id = get_post_id(url)
+            screenshot = os.path.join(self.output_dir, id, "screenshot.png")
+            if not self.driver.save_screenshot(screenshot):
+                print("failed to take screenshot")
+
+        if need_new_tab:
+            self.driver.close()
+            self.driver.switch_to.window(self.driver.window_handles[0])
+            time.sleep(0.5)
 
     def at_max_posts(self) -> bool:
         return self.max_posts is not None and len(self.seen) >= self.max_posts
 
     def scrape(self):
-        LOAD_SLEEP_SECS = 1
         MAX_SAME_SEEN = 120
 
         try:
@@ -289,14 +238,17 @@ class Archiver:
             time.sleep(LOAD_SLEEP_SECS)
             num_seen = len(self.seen)
             same_seen = 0
-            action = ActionChains(self.driver)
 
             while True:
                 try:
                     posts = self.find_posts()
                     for post, url in posts:
-                        action.move_to_element(post).perform()
-                        self.handle_post(post)
+
+                        if not self.should_skip_post(url):
+                            self.action.move_to_element(post).perform()
+                            self.handle_post(post, url)
+                        else:
+                            print(f"Skipping `{url}` as it already exists.")
 
                         self.seen.add(url)
 
@@ -307,7 +259,6 @@ class Archiver:
                     continue
 
                 self.driver.execute_script("window.scrollBy(0, 500);")
-                # self.driver.execute_script("window.scrollBy(0, 100000);")
                 time.sleep(LOAD_SLEEP_SECS)
 
                 new_seen = len(self.seen)
@@ -325,6 +276,19 @@ class Archiver:
             print("Encountered a fatal error:")
             traceback.print_exc()
 
+    def should_skip_post(self, url: str) -> bool:
+        """
+        If we have skip_existing set, then we want to skip posts if the path already exists.
+        """
+
+        if not self.skip_existing:
+            return False
+
+        id = get_post_id(url)
+        dir = os.path.join(self.output_dir, id)
+
+        return Path(dir).exists()
+
     def __enter__(self):
         return self
 
@@ -333,40 +297,12 @@ class Archiver:
 
 
 def main():
-    args = get_args()
-
-    # Hack to handle backslashes.
-    url = shlex.split(args.url)[0]
-    output_dir = args.output_dir
-    cookie_path = args.cookie_path
-    rerun = int(args.rerun) if args.rerun and int(args.rerun) > 0 else 1
-    max_posts = int(args.max_posts) if args.max_posts else None
-    members_only = bool(args.members_only)
-    profile_dir = args.profile_dir
-    profile_name = args.profile_name
-    headless = not (args.not_headless)
-
-    if args.driver is None or args.driver == "chrome":
-        driver = Driver.CHROME
-    elif args.driver == "firefox":
-        driver = Driver.FIREFOX
-    else:
-        raise Exception("Unsupported driver type!")
+    (settings, rerun) = get_settings()
 
     try:
-        print(f"Running the archiver {rerun} time(s) on `{url}`...")
+        print(f"Running the archiver {rerun} time(s) on `{settings.url}`...")
         for i in range(rerun):
-            with Archiver(
-                url=url,
-                output_dir=output_dir,
-                cookie_path=cookie_path,
-                max_posts=max_posts,
-                headless=headless,
-                driver=driver,
-                members_only=members_only,
-                profile_dir=profile_dir,
-                profile_name=profile_name,
-            ) as archiver:
+            with Archiver(settings) as archiver:
                 if rerun > 1:
                     print(f"===== Run {i + 1} ======")
                 archiver.scrape()

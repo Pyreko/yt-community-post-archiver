@@ -27,6 +27,10 @@ class Poll:
     total_votes: Optional[str]
 
 
+def get_post_id(url: str) -> str:
+    return url.split("/")[-1]
+
+
 @dataclass
 class Post:
     """
@@ -40,15 +44,14 @@ class Post:
     is_members: bool
     relative_date: str
     approximate_num_comments: Optional[str]
+    num_comments: Optional[str]
     num_thumbs_up: Optional[str]
     poll: Optional[Poll]
     when_archived: str
 
     def save(self, output_dir: str):
-        id = self.url.split("/")[-1]
+        id = get_post_id(self.url)
         dir = os.path.join(output_dir, id)
-
-        # print(f"Trying to save `{id}` at `{dir}`...")
 
         if not os.path.exists(dir):
             try:
