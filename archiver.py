@@ -8,7 +8,7 @@ from selenium.webdriver.remote.webelement import WebElement
 import os
 import traceback
 from arguments import ArchiverSettings, get_settings
-from post import Poll, Post, PollEntry, get_post_id
+from post import Post, get_post_id
 from cookies import parse_cookies
 import signal
 import sys
@@ -16,6 +16,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from datetime import timezone, datetime
 from helpers import (
     get_comment_count,
+    get_poll,
     init_driver,
     get_post_link,
     is_members_post,
@@ -30,16 +31,22 @@ class Archiver:
     """
 
     def __init__(self, settings: ArchiverSettings) -> None:
-        WIDTH = 1920
-        HEIGHT = 1080
+        if settings.headless and settings.take_screenshots:
+            # I found these good settings for general archiving + screenshots
+            width = 1080
+            height = 1920
+        else:
+            # If not headless, this might need to be tweaked.
+            width = 1920
+            height = 1080
 
         self.driver = init_driver(
             settings.driver,
             settings.headless,
             settings.profile_dir,
             settings.profile_name,
-            WIDTH,
-            HEIGHT,
+            width,
+            height,
         )
 
         def signal_handler(sig_num, frame):
@@ -48,7 +55,7 @@ class Archiver:
 
         signal.signal(signal.SIGINT, signal_handler)
 
-        self.driver.set_window_size(WIDTH, HEIGHT)  # just in case it wasn't set
+        self.driver.set_window_size(width, height)  # just in case it wasn't set
 
         # Make sure the output directory exists... if not, then try and make it.
         output_dir = settings.output_dir or "archive-output"
@@ -62,6 +69,8 @@ class Archiver:
         self.max_posts = settings.max_posts
         self.members_only = settings.members_only
         self.skip_existing = settings.skip_existing
+        self.take_screenshots = settings.take_screenshots
+        self.action = ActionChains(self.driver)
 
     def find_posts(self) -> List[Tuple[WebElement, str]]:
         posts = []
@@ -87,9 +96,13 @@ class Archiver:
         if not potential_posts:
             return None
 
-        return potential_posts[0]
+        post = potential_posts[0]
+
+        return post
 
     def handle_post(self, post: WebElement, url: str):
+        print(f"Handling `{url}`")
+
         post_link = get_post_link(post)
         if post_link is None:
             return
@@ -141,8 +154,6 @@ class Archiver:
             else None
         )
 
-        num_comments = get_comment_count(self.driver)
-
         thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
         num_thumbs_up = thumbs_elements[0].text if thumbs_elements else None
 
@@ -151,47 +162,15 @@ class Archiver:
             return
         text = text_elements[0].get_attribute("innerText")
 
-        poll = None
+        poll = get_poll(post, self.driver)
 
-        poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
-        if poll_elements:
-            # We want to click on the poll if we are signed in, and can't see a percentage.
-            poll_reclick = None
-            if self.driver.find_elements(By.ID, "avatar-btn"):
-                for p in poll_elements:
-                    percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
-                    if len(percentage) > 0:
-                        percentage_text = percentage[0].get_attribute("innerText")
-                        if len(percentage_text) == 0:
-                            # Try and click on the entry.
-                            poll_reclick = p
-                            p.click()
-                            time.sleep(0.5)
-                            break
+        # The following block may require opening things in a new tab.
+        num_comments = get_comment_count(self.driver)
+        need_new_tab = num_comments is None
 
-            poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
-            if poll_elements:
-                poll_entries = [
-                    PollEntry(p)
-                    for p in filter(
-                        lambda p: p is not None,
-                        (p.get_attribute("innerText") for p in poll_elements),
-                    )
-                ]
-
-                if poll_reclick is not None:
-                    try:
-                        poll_reclick.click()
-                    finally:
-                        poll_reclick = None
-
-                poll_total_votes_ele = post.find_elements(By.ID, "vote-info")
-                if poll_total_votes_ele:
-                    poll_total_votes = poll_total_votes_ele[0].text
-                else:
-                    poll_total_votes = None
-
-                poll = Poll(poll_entries, poll_total_votes)
+        if need_new_tab:
+            new_tab_post = self.open_post_in_tab(url)
+            num_comments = get_comment_count(self.driver)
 
         current_time = datetime.now(tz=timezone.utc)
         post = Post(
@@ -209,8 +188,25 @@ class Archiver:
             when_archived=str(current_time),
         )
 
-        print(f"Handling `{url}`...")
         post.save(self.output_dir)
+
+        if self.take_screenshots:
+            if new_tab_post is not None:
+                more = new_tab_post.find_elements(By.CLASS_NAME, "more-button")
+                if more:
+                    self.action.move_to_element(more[0])
+                    if more[0].is_displayed():
+                        more[0].click()
+
+            id = get_post_id(url)
+            screenshot = os.path.join(self.output_dir, id, "screenshot.png")
+            if not self.driver.save_screenshot(screenshot):
+                print("failed to take screenshot")
+
+        if need_new_tab:
+            self.driver.close()
+            self.driver.switch_to.window(self.driver.window_handles[0])
+            time.sleep(0.5)
 
     def at_max_posts(self) -> bool:
         return self.max_posts is not None and len(self.seen) >= self.max_posts
@@ -242,7 +238,6 @@ class Archiver:
             time.sleep(LOAD_SLEEP_SECS)
             num_seen = len(self.seen)
             same_seen = 0
-            action = ActionChains(self.driver)
 
             while True:
                 try:
@@ -250,16 +245,8 @@ class Archiver:
                     for post, url in posts:
 
                         if not self.should_skip_post(url):
-                            action.move_to_element(post).perform()
-                            new_tab_post = self.open_post_in_tab(url)
-
-                            if new_tab_post is not None:
-                                self.handle_post(new_tab_post, url)
-
-                            self.driver.close()
-                            self.driver.switch_to.default_content()
-
-                            # self.handle_post(post, url)
+                            self.action.move_to_element(post).perform()
+                            self.handle_post(post, url)
                         else:
                             print(f"Skipping `{url}` as it already exists.")
 

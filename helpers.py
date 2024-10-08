@@ -2,12 +2,15 @@
 
 
 from enum import Enum
+import time
 from typing import Optional
 from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
+
+from post import Poll, PollEntry
 
 
 class Driver(Enum):
@@ -19,6 +22,9 @@ class Driver(Enum):
     CHROME = 2
 
 
+type WebDriver = ChromeWebDriver | FirefoxWebDriver
+
+
 def init_driver(
     driver: Driver,
     headless: bool,
@@ -26,7 +32,7 @@ def init_driver(
     profile_name: Optional[str],
     width: int,
     height: int,
-):
+) -> WebDriver:
     """
     Initialize the driver and return it, based on the settings passed.
     """
@@ -79,7 +85,7 @@ def get_post_link(element: WebElement) -> Optional[WebElement]:
 
 
 def get_comment_count(
-    driver: ChromeWebDriver | FirefoxWebDriver,
+    driver: WebDriver,
 ) -> Optional[str]:
     comment_elements = driver.find_elements(By.TAG_NAME, "ytd-comments")
     if comment_elements:
@@ -92,3 +98,47 @@ def get_comment_count(
 
 def is_members_post(post: WebElement) -> bool:
     return bool(post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer"))
+
+
+def get_poll(post: WebElement, driver: WebDriver) -> Optional[Poll]:
+    poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
+    if poll_elements:
+        # We want to click on the poll if we are signed in, and can't see a percentage.
+        poll_reclick = None
+        if driver.find_elements(By.ID, "avatar-btn"):
+            for p in poll_elements:
+                percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
+                if len(percentage) > 0:
+                    percentage_text = percentage[0].get_attribute("innerText")
+                    if len(percentage_text) == 0:
+                        # Try and click on the entry.
+                        poll_reclick = p
+                        p.click()
+                        time.sleep(0.5)
+                        break
+
+        poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
+        if poll_elements:
+            poll_entries = [
+                PollEntry(p)
+                for p in filter(
+                    lambda p: p is not None,
+                    (p.get_attribute("innerText") for p in poll_elements),
+                )
+            ]
+
+            if poll_reclick is not None:
+                try:
+                    poll_reclick.click()
+                finally:
+                    poll_reclick = None
+
+            poll_total_votes_ele = post.find_elements(By.ID, "vote-info")
+            if poll_total_votes_ele:
+                poll_total_votes = poll_total_votes_ele[0].text
+            else:
+                poll_total_votes = None
+
+            return Poll(poll_entries, poll_total_votes)
+
+    return None
