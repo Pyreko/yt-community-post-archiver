@@ -140,3 +140,15 @@ def get_poll(
             return Poll(poll_entries, poll_total_votes)
 
     return None
+
+
+def find_post_element(
+    driver: Union[ChromeWebDriver, FirefoxWebDriver]
+) -> Optional[WebElement]:
+    potential_posts = driver.find_elements(By.ID, "post")
+    if not potential_posts:
+        return None
+
+    post = potential_posts[0]
+
+    return post
