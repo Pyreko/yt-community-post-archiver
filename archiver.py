@@ -79,15 +79,15 @@ class Archiver:
 
         return posts
 
-    # def open_post_in_tab(self, url: str) -> Optional[WebElement]:
-    #     self.driver.switch_to.new_window("tab")
-    #     self.driver.get(url)
-    #     time.sleep(LOAD_SLEEP_SECS)
-    #     potential_posts = self.driver.find_elements(By.ID, "post")
-    #     if not potential_posts:
-    #         return None
+    def open_post_in_tab(self, url: str) -> Optional[WebElement]:
+        self.driver.switch_to.new_window("tab")
+        self.driver.get(url)
+        time.sleep(LOAD_SLEEP_SECS)
+        potential_posts = self.driver.find_elements(By.ID, "post")
+        if not potential_posts:
+            return None
 
-    #     return potential_posts[0]
+        return potential_posts[0]
 
     def handle_post(self, post: WebElement, url: str):
         post_link = get_post_link(post)
@@ -151,6 +151,8 @@ class Archiver:
             return
         text = text_elements[0].get_attribute("innerText")
 
+        poll = None
+
         poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
         if poll_elements:
             # We want to click on the poll if we are signed in, and can't see a percentage.
@@ -190,8 +192,6 @@ class Archiver:
                     poll_total_votes = None
 
                 poll = Poll(poll_entries, poll_total_votes)
-            else:
-                poll = None
 
         current_time = datetime.now(tz=timezone.utc)
         post = Post(
@@ -251,15 +251,15 @@ class Archiver:
 
                         if not self.should_skip_post(url):
                             action.move_to_element(post).perform()
-                            # new_tab_post = self.open_post_in_tab(url)
+                            new_tab_post = self.open_post_in_tab(url)
 
-                            # if new_tab_post is not None:
-                            #     self.handle_post(new_tab_post, url)
+                            if new_tab_post is not None:
+                                self.handle_post(new_tab_post, url)
 
-                            # self.driver.close()
-                            # self.driver.switch_to.default_content()
+                            self.driver.close()
+                            self.driver.switch_to.default_content()
 
-                            self.handle_post(post, url)
+                            # self.handle_post(post, url)
                         else:
                             print(f"Skipping `{url}` as it already exists.")
 
