@@ -15,12 +15,15 @@ import sys
 from selenium.webdriver.common.action_chains import ActionChains
 from datetime import timezone, datetime
 from helpers import (
+    find_post_element,
     get_comment_count,
     get_poll,
     init_driver,
     get_post_link,
     is_members_post,
 )
+import io
+from PIL import Image
 
 LOAD_SLEEP_SECS = 1
 
@@ -31,14 +34,14 @@ class Archiver:
     """
 
     def __init__(self, settings: ArchiverSettings) -> None:
+        width = 1920
+
         if settings.headless and settings.take_screenshots:
-            # I found these good settings for general archiving + screenshots
-            width = 1080
+            # I found these good settings for taking screenshots
             height = 1920
         else:
-            # If not headless, this might need to be tweaked.
-            width = 1920
             height = 1080
+            # If not headless, this might need to be tweaked.
 
         self.driver = init_driver(
             settings.driver,
@@ -92,13 +95,8 @@ class Archiver:
         self.driver.switch_to.new_window("tab")
         self.driver.get(url)
         time.sleep(LOAD_SLEEP_SECS)
-        potential_posts = self.driver.find_elements(By.ID, "post")
-        if not potential_posts:
-            return None
 
-        post = potential_posts[0]
-
-        return post
+        return find_post_element(self.driver)
 
     def handle_post(self, post: WebElement, url: str):
         print(f"Handling `{url}`")
@@ -167,6 +165,7 @@ class Archiver:
         # The following block may require opening things in a new tab.
         num_comments = get_comment_count(self.driver)
         need_new_tab = num_comments is None
+        new_tab_post = None
 
         if need_new_tab:
             new_tab_post = self.open_post_in_tab(url)
@@ -198,10 +197,11 @@ class Archiver:
                     if more[0].is_displayed():
                         more[0].click()
 
-            id = get_post_id(url)
-            screenshot = os.path.join(self.output_dir, id, "screenshot.png")
-            if not self.driver.save_screenshot(screenshot):
-                print("failed to take screenshot")
+                id = get_post_id(url)
+                screenshot = os.path.join(self.output_dir, id, "screenshot.png")
+                img_bytes = new_tab_post.screenshot_as_png
+                img = Image.open(io.BytesIO(img_bytes))
+                img.save(screenshot)
 
         if need_new_tab:
             self.driver.close()
