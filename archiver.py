@@ -90,18 +90,60 @@ class Archiver:
         return posts
 
     def handle_post(self, post: WebElement, url: str):
-        post_builder = PostBuilder(
-            driver=self.driver,
-            take_screenshots=self.take_screenshots,
-            post=post,
-            url=url,
-            output_dir=self.output_dir,
-            members_only=self.members_only,
-        )
-        post_builder.process_post()
+        """
+        Try to obtain and process a post. This will retry internally up to 3 times.
+        """
+        MAX_ATTEMPTS = 3
+        attempts = 0
+        while True:
+            try:
+                self.action.move_to_element(post).perform()
+                self.seen.add(url)
+                post_builder = PostBuilder(
+                    driver=self.driver,
+                    take_screenshots=self.take_screenshots,
+                    post=post,
+                    url=url,
+                    output_dir=self.output_dir,
+                    members_only=self.members_only,
+                )
+                post_builder.process_post()
+                break
+            except SystemExit:
+                raise SystemExit
+            except Exception as ex:
+                attempts += 1
+                if attempts == MAX_ATTEMPTS:
+                    raise ex
 
     def at_max_posts(self) -> bool:
         return self.max_posts is not None and len(self.seen) >= self.max_posts
+
+    def try_scroll(self) -> bool:
+        """
+        Try and scroll. If we should no longer scroll, this will return False.
+
+        This will internally try up to 3 times.
+        """
+
+        MAX_ATTEMPTS = 3
+        scroll_attempts = 0
+        while True:
+            try:
+                # Check the current URL isn't a post. If it is, try closing the current tab;
+                # if no tab is left, the root URL was a post, so halt.
+                if get_true_comment_count(self.driver) is not None:
+                    if not close_current_tab(self.driver):
+                        return False
+
+                self.driver.execute_script("window.scrollBy(0, 500);")
+                return True
+            except SystemExit:
+                raise SystemExit
+            except Exception as ex:
+                scroll_attempts += 1
+                if scroll_attempts == MAX_ATTEMPTS:
+                    raise ex
 
     def scrape(self):
         MAX_SAME_SEEN = 120
@@ -135,8 +177,6 @@ class Archiver:
                 posts = self.find_posts()
                 for post, url in posts:
                     if not self.should_skip_post(url) and url not in self.seen:
-                        self.action.move_to_element(post).perform()
-                        self.seen.add(url)
                         self.handle_post(post, url)
                     else:
                         print(f"Skipping `{url}` as it already exists.")
@@ -145,15 +185,10 @@ class Archiver:
                         print(f"Hit maximum posts ({self.max_posts}). Halting.")
                         return
 
-                # Check the current URL isn't a post. If it is, try closing the current tab;
-                # if no tab is left, the root URL was a post, so halt.
-                if get_true_comment_count(self.driver) is not None:
-                    if not close_current_tab(self.driver):
-                        break
+                if not self.try_scroll():
+                    break
 
-                self.driver.execute_script("window.scrollBy(0, 500);")
                 time.sleep(LOAD_SLEEP_SECS)
-
                 new_seen = len(self.seen)
                 if num_seen == new_seen:
                     same_seen += 1
