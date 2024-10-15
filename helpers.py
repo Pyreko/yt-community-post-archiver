@@ -1,6 +1,7 @@
 # A series of helper functions to avoid cluttering the main archiver code file.
 
 from enum import Enum
+import time
 from typing import Optional, Union
 from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
@@ -79,10 +80,6 @@ def get_post_link(element: WebElement) -> Optional[WebElement]:
     )
 
 
-def is_members_post(post: WebElement) -> bool:
-    return bool(post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer"))
-
-
 def find_post_element(
     driver: Union[ChromeWebDriver, FirefoxWebDriver]
 ) -> Optional[WebElement]:
@@ -93,3 +90,18 @@ def find_post_element(
     post = potential_posts[0]
 
     return post
+
+
+def close_current_tab(driver: Union[ChromeWebDriver, FirefoxWebDriver]) -> bool:
+    """
+    Try to close the current tab. Return True if there is still a tab after, and False if there
+    is no tabs after.
+    """
+
+    if len(driver.window_handles) > 1:
+        driver.close()
+        driver.switch_to.window(driver.window_handles[0])
+        time.sleep(0.5)
+        return True
+    else:
+        return False

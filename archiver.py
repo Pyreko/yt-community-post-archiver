@@ -15,10 +15,11 @@ import sys
 from selenium.webdriver.common.action_chains import ActionChains
 from helpers import (
     LOAD_SLEEP_SECS,
+    close_current_tab,
     init_driver,
     get_post_link,
 )
-from post_builder import PostBuilder
+from post_builder import PostBuilder, get_true_comment_count
 
 
 class Archiver:
@@ -46,6 +47,7 @@ class Archiver:
         )
 
         def signal_handler(sig_num, frame):
+            print("interrupt signal sent, halting...")
             self.driver.quit()
             sys.exit(1)
 
@@ -66,6 +68,9 @@ class Archiver:
         self.members_only = settings.members_only
         self.skip_existing = settings.skip_existing
         self.take_screenshots = settings.take_screenshots
+        # NB: DO NOT TRY AND RE-USE THE ACTIONCHAINS FROM THE ORIGINAL ARCHIVER!
+        # This will cause an exception as the ActionChains becomes... invalid, for
+        # whatever reason, if it is used in a new tab.
         self.action = ActionChains(self.driver)
 
     def find_posts(self) -> List[Tuple[WebElement, str]]:
@@ -91,7 +96,6 @@ class Archiver:
             post=post,
             url=url,
             output_dir=self.output_dir,
-            action=self.action,
             members_only=self.members_only,
         )
         post_builder.process_post()
@@ -128,23 +132,24 @@ class Archiver:
             same_seen = 0
 
             while True:
-                try:
-                    posts = self.find_posts()
-                    for post, url in posts:
-
-                        if not self.should_skip_post(url):
-                            self.action.move_to_element(post).perform()
-                            self.handle_post(post, url)
-                        else:
-                            print(f"Skipping `{url}` as it already exists.")
-
+                posts = self.find_posts()
+                for post, url in posts:
+                    if not self.should_skip_post(url) and url not in self.seen:
+                        self.action.move_to_element(post).perform()
                         self.seen.add(url)
+                        self.handle_post(post, url)
+                    else:
+                        print(f"Skipping `{url}` as it already exists.")
 
-                        if self.at_max_posts():
-                            print(f"Hit maximum posts ({self.max_posts}). Halting.")
-                            return
-                except:
-                    continue
+                    if self.at_max_posts():
+                        print(f"Hit maximum posts ({self.max_posts}). Halting.")
+                        return
+
+                # Check the current URL isn't a post. If it is, try closing the current tab;
+                # if no tab is left, the root URL was a post, so halt.
+                if get_true_comment_count(self.driver) is not None:
+                    if not close_current_tab(self.driver):
+                        break
 
                 self.driver.execute_script("window.scrollBy(0, 500);")
                 time.sleep(LOAD_SLEEP_SECS)
@@ -159,10 +164,13 @@ class Archiver:
                     break
 
                 num_seen = new_seen
-
+        except SystemExit:
+            raise SystemExit
         except Exception:
             print("Encountered a fatal error:")
             traceback.print_exc()
+            self.driver.quit()
+            sys.exit(1)
 
     def should_skip_post(self, url: str) -> bool:
         """
@@ -194,8 +202,11 @@ def main():
                 if rerun > 1:
                     print(f"===== Run {i + 1} ======")
                 archiver.scrape()
-    finally:
         print("Done!")
+    except Exception:
+        print("Encountered a fatal error:")
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

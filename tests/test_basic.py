@@ -8,7 +8,7 @@ def test_basic_works(tmp_path):
     Simple testing to make sure we can download a few files. This does not verify validity or anything.
     """
 
-    to_download = 3
+    to_download = 5
 
     subprocess.run(
         [
@@ -93,7 +93,7 @@ def test_screenshots(tmp_path):
         if "post.txt" in files:
             num_files += 1
 
-        if "screenshots.png" in files:
+        if "screenshot.png" in files:
             num_screenshots += 1
 
     assert num_files == to_download
@@ -123,8 +123,9 @@ def test_single_image(tmp_path):
 
     num_pics = 0
     for _, _, files in os.walk(tmp_path):
-        if any(".png" in file or ".jpg" in file for file in files):
-            num_pics += 1
+        num_pics += sum(
+            1 if (".png" in file or ".jpg") in file else 0 for file in files
+        )
 
     assert num_pics == 1
 
@@ -152,7 +153,9 @@ def test_multi_images(tmp_path):
 
     num_pics = 0
     for _, _, files in os.walk(tmp_path):
-        if any(".png" in file or ".jpg" in file for file in files):
-            num_pics += 1
+        print(files)
+        num_pics += sum(
+            1 if (".png" in file or ".jpg" in file) else 0 for file in files
+        )
 
     assert num_pics == 2
