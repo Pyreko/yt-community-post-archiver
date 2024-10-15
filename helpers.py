@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 
-from post import Poll, PollEntry
+LOAD_SLEEP_SECS = 1
 
 
 class Driver(Enum):
@@ -62,7 +62,7 @@ def init_driver(
             raise Exception("Unsupported driver type!")
 
 
-def is_post(candidate: WebElement) -> bool:
+def __is_post(candidate: WebElement) -> bool:
     href = candidate.get_attribute("href")
     if href is not None:
         return "https://www.youtube.com/post/" in href
@@ -73,73 +73,11 @@ def is_post(candidate: WebElement) -> bool:
 def get_post_link(element: WebElement) -> Optional[WebElement]:
     return next(
         filter(
-            is_post,
+            __is_post,
             element.find_elements(By.TAG_NAME, "a"),
         ),
         None,
     )
-
-
-def get_comment_count(
-    driver: Union[ChromeWebDriver, FirefoxWebDriver],
-) -> Optional[str]:
-    comment_elements = driver.find_elements(By.TAG_NAME, "ytd-comments")
-    if comment_elements:
-        count = comment_elements[0].find_elements(By.ID, "count")
-        if count:
-            return count[0].text.split()[0]
-
-    return None
-
-
-def is_members_post(post: WebElement) -> bool:
-    return bool(post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer"))
-
-
-def get_poll(
-    post: WebElement, driver: Union[ChromeWebDriver, FirefoxWebDriver]
-) -> Optional[Poll]:
-    poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
-    if poll_elements:
-        # We want to click on the poll if we are signed in, and can't see a percentage.
-        poll_reclick = None
-        if driver.find_elements(By.ID, "avatar-btn"):
-            for p in poll_elements:
-                percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
-                if len(percentage) > 0:
-                    percentage_text = percentage[0].get_attribute("innerText")
-                    if len(percentage_text) == 0:
-                        # Try and click on the entry.
-                        poll_reclick = p
-                        p.click()
-                        time.sleep(0.5)
-                        break
-
-        poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
-        if poll_elements:
-            poll_entries = [
-                PollEntry(p)
-                for p in filter(
-                    lambda p: p is not None,
-                    (p.get_attribute("innerText") for p in poll_elements),
-                )
-            ]
-
-            if poll_reclick is not None:
-                try:
-                    poll_reclick.click()
-                finally:
-                    poll_reclick = None
-
-            poll_total_votes_ele = post.find_elements(By.ID, "vote-info")
-            if poll_total_votes_ele:
-                poll_total_votes = poll_total_votes_ele[0].text
-            else:
-                poll_total_votes = None
-
-            return Poll(poll_entries, poll_total_votes)
-
-    return None
 
 
 def find_post_element(
@@ -152,3 +90,18 @@ def find_post_element(
     post = potential_posts[0]
 
     return post
+
+
+def close_current_tab(driver: Union[ChromeWebDriver, FirefoxWebDriver]) -> bool:
+    """
+    Try to close the current tab. Return True if there is still a tab after, and False if there
+    is no tabs after.
+    """
+
+    if len(driver.window_handles) > 1:
+        driver.close()
+        driver.switch_to.window(driver.window_handles[0])
+        time.sleep(0.5)
+        return True
+    else:
+        return False

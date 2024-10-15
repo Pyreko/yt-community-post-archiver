@@ -2,30 +2,24 @@
 
 from pathlib import Path
 import time
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 import os
 import traceback
 from arguments import ArchiverSettings, get_settings
-from post import Post, get_post_id
+from post import get_post_id
 from cookies import parse_cookies
 import signal
 import sys
 from selenium.webdriver.common.action_chains import ActionChains
-from datetime import timezone, datetime
 from helpers import (
-    find_post_element,
-    get_comment_count,
-    get_poll,
+    LOAD_SLEEP_SECS,
+    close_current_tab,
     init_driver,
     get_post_link,
-    is_members_post,
 )
-import io
-from PIL import Image
-
-LOAD_SLEEP_SECS = 1
+from post_builder import PostBuilder, get_true_comment_count
 
 
 class Archiver:
@@ -53,6 +47,7 @@ class Archiver:
         )
 
         def signal_handler(sig_num, frame):
+            print("interrupt signal sent, halting...")
             self.driver.quit()
             sys.exit(1)
 
@@ -73,6 +68,9 @@ class Archiver:
         self.members_only = settings.members_only
         self.skip_existing = settings.skip_existing
         self.take_screenshots = settings.take_screenshots
+        # NB: DO NOT TRY AND RE-USE THE ACTIONCHAINS FROM THE ORIGINAL ARCHIVER!
+        # This will cause an exception as the ActionChains becomes... invalid, for
+        # whatever reason, if it is used in a new tab.
         self.action = ActionChains(self.driver)
 
     def find_posts(self) -> List[Tuple[WebElement, str]]:
@@ -91,125 +89,61 @@ class Archiver:
 
         return posts
 
-    def open_post_in_tab(self, url: str) -> Optional[WebElement]:
-        self.driver.switch_to.new_window("tab")
-        self.driver.get(url)
-        time.sleep(LOAD_SLEEP_SECS)
-
-        return find_post_element(self.driver)
-
     def handle_post(self, post: WebElement, url: str):
-        print(f"Handling `{url}`")
-
-        post_link = get_post_link(post)
-        if post_link is None:
-            return
-
-        relative_date = post_link.text
-
-        is_members = is_members_post(post)
-
-        if self.members_only and (not is_members):
-            # print("Skipping as it is not a members post.")
-            return
-
-        # Filter out the first link as it will always be the channel.
-        links = list(
-            dict.fromkeys(
-                filter(
-                    lambda link: link is not None,
-                    (
-                        link.get_attribute("href")
-                        for link in post.find_elements(By.TAG_NAME, "a")
-                    ),
+        """
+        Try to obtain and process a post. This will retry internally up to 3 times.
+        """
+        MAX_ATTEMPTS = 3
+        attempts = 0
+        while True:
+            try:
+                self.action.move_to_element(post).perform()
+                self.seen.add(url)
+                post_builder = PostBuilder(
+                    driver=self.driver,
+                    take_screenshots=self.take_screenshots,
+                    post=post,
+                    url=url,
+                    output_dir=self.output_dir,
+                    members_only=self.members_only,
                 )
-            )
-        )[1:]
-
-        # To get all images, we may need to load them all. Look for a button indicating multiple images first, click it
-        # until it disappears, at which point all images should be loaded.
-        img_buttons = post.find_elements(By.ID, "right-arrow")
-        for img_button in img_buttons:
-            if "ytd-post-multi-image-renderer" in img_button.get_attribute("class"):
-                while img_button.is_displayed():
-                    img_button.click()
-
-        images = [
-            url.split("=")[0] + "=s3840"
-            for url in filter(
-                lambda img: img is not None,
-                (
-                    img.get_attribute("src")
-                    for img in post.find_elements(By.TAG_NAME, "img")
-                ),
-            )
-        ]
-
-        comment_elements = post.find_elements(By.ID, "reply-button-end")
-        approximate_num_comments = (
-            comment_elements[0].text.strip().split("\n")[0].strip()
-            if comment_elements
-            else None
-        )
-
-        thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
-        num_thumbs_up = thumbs_elements[0].text if thumbs_elements else None
-
-        text_elements = post.find_elements(By.ID, "content")
-        if not text_elements:
-            return
-        text = text_elements[0].get_attribute("innerText")
-
-        poll = get_poll(post, self.driver)
-
-        # The following block may require opening things in a new tab.
-        num_comments = get_comment_count(self.driver)
-        need_new_tab = num_comments is None
-        new_tab_post = None
-
-        if need_new_tab:
-            new_tab_post = self.open_post_in_tab(url)
-            num_comments = get_comment_count(self.driver)
-
-        current_time = datetime.now(tz=timezone.utc)
-        post = Post(
-            url=url,
-            text=text,
-            links=links,
-            # We skip the first image since that's always the profile picture.
-            images=images[1:],
-            is_members=is_members,
-            relative_date=relative_date,
-            approximate_num_comments=approximate_num_comments,
-            num_comments=num_comments,
-            num_thumbs_up=num_thumbs_up,
-            poll=poll,
-            when_archived=str(current_time),
-        )
-
-        post.save(self.output_dir)
-
-        if self.take_screenshots:
-            if new_tab_post is not None:
-                more = new_tab_post.find_elements(By.CLASS_NAME, "more-button")
-                if more:
-                    self.action.move_to_element(more[0])
-                    if more[0].is_displayed():
-                        more[0].click()
-
-                id = get_post_id(url)
-                screenshot = os.path.join(self.output_dir, id, "screenshot.png")
-                img_bytes = new_tab_post.screenshot_as_png
-                img = Image.open(io.BytesIO(img_bytes))
-                img.save(screenshot)
-
-        if need_new_tab:
-            self.driver.close()
-            self.driver.switch_to.window(self.driver.window_handles[0])
-            time.sleep(0.5)
+                post_builder.process_post()
+                break
+            except SystemExit:
+                raise SystemExit
+            except Exception as ex:
+                attempts += 1
+                if attempts == MAX_ATTEMPTS:
+                    raise ex
 
     def at_max_posts(self) -> bool:
         return self.max_posts is not None and len(self.seen) >= self.max_posts
+
+    def try_scroll(self) -> bool:
+        """
+        Try and scroll. If we should no longer scroll, this will return False.
+
+        This will internally try up to 3 times.
+        """
+
+        MAX_ATTEMPTS = 3
+        scroll_attempts = 0
+        while True:
+            try:
+                # Check the current URL isn't a post. If it is, try closing the current tab;
+                # if no tab is left, the root URL was a post, so halt.
+                if get_true_comment_count(self.driver) is not None:
+                    if not close_current_tab(self.driver):
+                        return False
+
+                self.driver.execute_script("window.scrollBy(0, 500);")
+                return True
+            except SystemExit:
+                raise SystemExit
+            except Exception as ex:
+                scroll_attempts += 1
+                if scroll_attempts == MAX_ATTEMPTS:
+                    raise ex
 
     def scrape(self):
         MAX_SAME_SEEN = 120
@@ -240,27 +174,21 @@ class Archiver:
             same_seen = 0
 
             while True:
-                try:
-                    posts = self.find_posts()
-                    for post, url in posts:
+                posts = self.find_posts()
+                for post, url in posts:
+                    if not self.should_skip_post(url) and url not in self.seen:
+                        self.handle_post(post, url)
+                    else:
+                        print(f"Skipping `{url}` as it already exists.")
 
-                        if not self.should_skip_post(url):
-                            self.action.move_to_element(post).perform()
-                            self.handle_post(post, url)
-                        else:
-                            print(f"Skipping `{url}` as it already exists.")
+                    if self.at_max_posts():
+                        print(f"Hit maximum posts ({self.max_posts}). Halting.")
+                        return
 
-                        self.seen.add(url)
+                if not self.try_scroll():
+                    break
 
-                        if self.at_max_posts():
-                            print(f"Hit maximum posts ({self.max_posts}). Halting.")
-                            return
-                except:
-                    continue
-
-                self.driver.execute_script("window.scrollBy(0, 500);")
                 time.sleep(LOAD_SLEEP_SECS)
-
                 new_seen = len(self.seen)
                 if num_seen == new_seen:
                     same_seen += 1
@@ -271,10 +199,13 @@ class Archiver:
                     break
 
                 num_seen = new_seen
-
+        except SystemExit:
+            raise SystemExit
         except Exception:
             print("Encountered a fatal error:")
             traceback.print_exc()
+            self.driver.quit()
+            sys.exit(1)
 
     def should_skip_post(self, url: str) -> bool:
         """
@@ -306,8 +237,11 @@ def main():
                 if rerun > 1:
                     print(f"===== Run {i + 1} ======")
                 archiver.scrape()
-    finally:
         print("Done!")
+    except Exception:
+        print("Encountered a fatal error:")
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":
