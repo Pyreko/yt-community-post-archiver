@@ -3,6 +3,7 @@
 from pathlib import Path
 import time
 from typing import List, Tuple
+import selenium
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 import os
@@ -34,8 +35,8 @@ class Archiver:
             # I found these good settings for taking screenshots
             height = 1920
         else:
-            height = 1080
             # If not headless, this might need to be tweaked.
+            height = 1080
 
         self.driver = init_driver(
             settings.driver,
@@ -68,8 +69,11 @@ class Archiver:
         self.members_only = settings.members_only
         self.skip_existing = settings.skip_existing
         self.take_screenshots = settings.take_screenshots
-        # NB: DO NOT TRY AND RE-USE THE ACTIONCHAINS FROM THE ORIGINAL ARCHIVER!
-        # This will cause an exception as the ActionChains becomes... invalid, for
+        self.save_comments_types = settings.save_comments_types
+        self.max_comments = settings.max_comments
+
+        # NB: DO NOT TRY AND RE-USE THE ACTIONCHAINS FOR OTHER TABS.
+        # This will cause an exception as the ActionChains becomes invalid, for
         # whatever reason, if it is used in a new tab.
         self.action = ActionChains(self.driver)
 
@@ -91,13 +95,15 @@ class Archiver:
 
     def handle_post(self, post: WebElement, url: str):
         """
-        Try to obtain and process a post. This will retry internally up to 3 times.
+        Try to obtain and process a post. This will retry internally up to 5 times.
         """
-        MAX_ATTEMPTS = 3
+
+        MAX_ATTEMPTS = 5
         attempts = 0
+
         while True:
             try:
-                self.action.move_to_element(post).perform()
+                self.action.scroll_to_element(post).perform()
                 self.seen.add(url)
                 post_builder = PostBuilder(
                     driver=self.driver,
@@ -106,6 +112,8 @@ class Archiver:
                     url=url,
                     output_dir=self.output_dir,
                     members_only=self.members_only,
+                    save_comments_types=self.save_comments_types,
+                    max_comments=self.max_comments,
                 )
                 post_builder.process_post()
                 break
@@ -113,13 +121,16 @@ class Archiver:
                 raise SystemExit
             except Exception as ex:
                 attempts += 1
+
                 if attempts == MAX_ATTEMPTS:
                     raise ex
+
+                time.sleep(1)
 
     def at_max_posts(self) -> bool:
         return self.max_posts is not None and len(self.seen) >= self.max_posts
 
-    def try_scroll(self) -> bool:
+    def could_scroll(self) -> bool:
         """
         Try and scroll. If we should no longer scroll, this will return False.
 
@@ -146,7 +157,8 @@ class Archiver:
                     raise ex
 
     def scrape(self):
-        MAX_SAME_SEEN = 120
+        # Could use a scrollbar height check instead but idk why but that was flaky sometimes.
+        MAX_SAME_SEEN = 60
 
         try:
             self.driver.get(self.url)
@@ -176,16 +188,16 @@ class Archiver:
             while True:
                 posts = self.find_posts()
                 for post, url in posts:
+                    if self.at_max_posts():
+                        print(f"Hit maximum posts ({self.max_posts}). Halting.")
+                        return
+
                     if not self.should_skip_post(url) and url not in self.seen:
                         self.handle_post(post, url)
                     else:
                         print(f"Skipping `{url}` as it already exists.")
 
-                    if self.at_max_posts():
-                        print(f"Hit maximum posts ({self.max_posts}). Halting.")
-                        return
-
-                if not self.try_scroll():
+                if not self.could_scroll():
                     break
 
                 time.sleep(LOAD_SLEEP_SECS)
@@ -231,13 +243,18 @@ def main():
     (settings, rerun) = get_settings()
 
     try:
-        print(f"Running the archiver {rerun} time(s) on `{settings.url}`...")
+        if rerun == 1:
+            print(f"Running the archiver on `{settings.url}`...")
+        else:
+            print(f"Running the archiver {rerun} times on `{settings.url}`...")
         for i in range(rerun):
             with Archiver(settings) as archiver:
                 if rerun > 1:
                     print(f"===== Run {i + 1} ======")
                 archiver.scrape()
         print("Done!")
+    except SystemExit:
+        sys.exit(1)
     except Exception:
         print("Encountered a fatal error:")
         traceback.print_exc()

@@ -28,7 +28,7 @@ def test_basic_works(tmp_path):
 
     num_files = 0
     for _, _, files in os.walk(tmp_path):
-        if "post.txt" in files:
+        if "post.json" in files:
             num_files += 1
 
     assert num_files == to_download
@@ -57,7 +57,7 @@ def test_poll(tmp_path):
 
     num_files = 0
     for _, _, files in os.walk(tmp_path):
-        if "post.txt" in files:
+        if "post.json" in files:
             num_files += 1
 
     assert num_files == 1
@@ -90,7 +90,7 @@ def test_screenshots(tmp_path):
     num_files = 0
     num_screenshots = 0
     for _, _, files in os.walk(tmp_path):
-        if "post.txt" in files:
+        if "post.json" in files:
             num_files += 1
 
         if "screenshot.png" in files:
@@ -98,6 +98,50 @@ def test_screenshots(tmp_path):
 
     assert num_files == to_download
     assert num_screenshots == to_download
+
+
+def test_screenshots_2(tmp_path):
+    """
+    Simple test to try screenshots. This tests some known hard cases.
+    """
+
+    for count, to_test in enumerate(
+        [
+            # Test if a "more" button is not there.
+            "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g/community?lb=UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
+            # Test if a "more" button IS there.
+            "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g/community?lb=UgkxmfOxusAblKXyexE0_5TfO3MHoRXyqbSP",
+        ]
+    ):
+
+        test_tmp_path = os.path.join(tmp_path, str(count))
+
+        subprocess.run(
+            [
+                "python3",
+                "archiver.py",
+                to_test,
+                "-o",
+                test_tmp_path,
+                "--take-screenshots",
+            ],
+            check=True,
+        )
+
+        if not os.path.isdir(test_tmp_path):
+            sys.exit(1)
+
+        num_files = 0
+        num_screenshots = 0
+        for _, _, files in os.walk(test_tmp_path):
+            if "post.json" in files:
+                num_files += 1
+
+            if "screenshot.png" in files:
+                num_screenshots += 1
+
+        assert num_files == 1
+        assert num_screenshots == 1
 
 
 def test_single_image(tmp_path):
@@ -159,3 +203,47 @@ def test_multi_images(tmp_path):
         )
 
     assert num_pics == 2
+
+
+def test_comments(tmp_path):
+    """
+    Simple test to ensure comments work.
+    """
+
+    # ideally test all of ["all", "hearted", "pinned", "creator", "members"]
+    # however this is a bit hard with posts
+    for comment_type in ["all", "members"]:
+        test_path = os.path.join(tmp_path, comment_type)
+
+        subprocess.run(
+            [
+                "python3",
+                "archiver.py",
+                "https://www.youtube.com/post/UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
+                "-o",
+                test_path,
+                "--save-comments",
+                comment_type,
+                "--max-comments",
+                "5",
+            ],
+            check=True,
+        )
+
+        if not os.path.isdir(test_path):
+            sys.exit(1)
+
+        num_files = 0
+        num_comments = 0
+
+        for _, _, files in os.walk(test_path):
+            if "post.json" in files:
+                num_files += 1
+
+        for root, _, files in os.walk(test_path):
+            if root.endswith("comments"):
+                num_comments = len(files)
+                break
+
+        assert num_files == 1
+        assert num_comments == 5

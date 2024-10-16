@@ -1,6 +1,6 @@
 # A series of helper functions to avoid cluttering the main archiver code file.
 
-from enum import Enum
+from enum import Enum, unique
 import time
 from typing import Optional, Union
 from selenium import webdriver
@@ -12,6 +12,7 @@ from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 LOAD_SLEEP_SECS = 1
 
 
+@unique
 class Driver(Enum):
     """
     The backing browser to use for scraping.
