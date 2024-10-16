@@ -42,6 +42,42 @@ me know if it's broken, and if I have the bandwidth I'll try and fix it.
    python3 archiver.py --help
    ```
 
+### Example
+
+For example, let's say I ran:
+
+```shell
+python3 archiver.py "https://www.youtube.com/@IRyS/community" -o "output/testing" -m 1  
+```
+
+This runs the archiver, directed to `https://www.youtube.com/@IRyS/community`, saving to `output/testing`, and gets
+a maximum of one post.
+
+At the time of writing, this gives me two files - `post.json`:
+
+```json
+{
+    "url": "https://www.youtube.com/post/Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo",
+    "text": "Carbonated Love Wallpaper for those who love the thumbnail :D Courtesy of kanauru!  Stream the song if you haven't yet!!\n\n⬇️FULL MV⬇️\nhttps://youtu.be/DjNNpw2x2dU?si=B0heA...",
+    "images": [
+        "https://yt3.ggpht.com/KfLmUOa22rydRozKY34zopeHP39EN0u_X5qLplQiKQd1i2rxxidrcG4RxH5s3ceGY9ql8VfIQgdA=s3840"
+    ],
+    "links": [
+        "https://www.youtube.com/post/Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo",
+        "https://www.youtube.com/watch?v=DjNNpw2x2dU&t=0s",
+    ],
+    "is_members": false,
+    "relative_date": "3 months ago",
+    "approximate_num_comments": "111",
+    "num_comments": "111",
+    "num_thumbs_up": "7.3K",
+    "poll": null,
+    "when_archived": "2024-10-16 05:20:18.045639+00:00"
+}
+```
+
+and an image file (`Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo-0`).
+
 ### Set save location
 
 If you want to set the save location, then use `-o`:
