@@ -106,11 +106,19 @@ def _get_likes(comment: WebElement) -> Optional[str]:
 
 
 def _get_is_hearted(comment: WebElement) -> bool:
-    return bool(comment.find_elements(By.ID, "creator-heart-button"))
+    possible_hearts = comment.find_elements(By.ID, "creator-heart-button")
+    if not possible_hearts:
+        return False
+
+    return possible_hearts[0].is_displayed()
 
 
 def _get_is_pinned(comment: WebElement) -> bool:
-    return bool(comment.find_elements(By.ID, "pinned-comment-badge"))
+    possible_pins = comment.find_elements(By.ID, "pinned-comment-badge")
+    if not possible_pins:
+        return False
+
+    return possible_pins[0].is_displayed()
 
 
 def _get_contents(comment: WebElement) -> Optional[str]:
