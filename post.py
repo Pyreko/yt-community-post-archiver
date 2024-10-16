@@ -61,7 +61,7 @@ class Post:
                 return
 
         try:
-            data_path = os.path.join(dir, "post.txt")
+            data_path = os.path.join(dir, "post.json")
             with open(data_path, "w", encoding="utf-8") as f:
                 json.dump(
                     self.__dict__,

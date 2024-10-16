@@ -1,9 +1,38 @@
 import argparse
 from dataclasses import dataclass
+from enum import Enum, unique
 import shlex
-from typing import List, Optional
+from typing import Optional, Set
 
 from helpers import Driver
+
+
+@unique
+class CommentType(Enum):
+    """
+    The different types of comment types we can try and save.
+    """
+
+    ALL = 1
+    HEARTED = 2
+    PINNED = 3
+    CREATOR = 4
+    MEMBERS = 5
+
+    def from_str(s: str):
+        match s:
+            case "all":
+                return CommentType.ALL
+            case "hearted":
+                return CommentType.HEARTED
+            case "pinned":
+                return CommentType.PINNED
+            case "creator":
+                return CommentType.CREATOR
+            case "members":
+                return CommentType.MEMBERS
+            case _:
+                raise Exception("Unsupported comment type!")
 
 
 @dataclass
@@ -13,14 +42,14 @@ class ArchiverSettings:
     members_only: bool
     headless: bool
     cookie_path: Optional[str]
-    max_posts: Optional[str]
+    max_posts: Optional[int]
     profile_dir: Optional[str]
     profile_name: Optional[str]
     driver: Driver
-    save_comments: List[str]
+    save_comments_types: Set[CommentType]
+    max_comments: Optional[int]
     take_screenshots: bool
     skip_existing: bool
-    # max_tasks: int
 
 
 def _create_parser() -> argparse.ArgumentParser:
@@ -65,7 +94,7 @@ def _create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-m",
         "--max-posts",
-        type=str,
+        type=int,
         required=False,
         default=None,
         help="Set a limit on how many posts to download.",
@@ -98,20 +127,20 @@ def _create_parser() -> argparse.ArgumentParser:
         required=False,
         help="Specify which browser driver to use.",
         nargs="+",
-        choices=["all", "hearted", "pinned", "creator"],
+        choices=["all", "hearted", "pinned", "creator", "members"],
+    )
+    parser.add_argument(
+        "--max-comments",
+        type=int,
+        required=False,
+        default=None,
+        help="Set a limit on how many comments to grab per post.",
     )
     parser.add_argument(
         "--skip-existing",
         action="store_true",
         help="Skip any posts if the save location already contains data.",
     )
-    # parser.add_argument(
-    #     "--max-tasks",
-    #     type=int,
-    #     required=False,
-    #     help="The maximum number of tasks to spawn at once. Note this is an upper bound, the actual amount used may be less.",
-    # )
-    # parser.add_argument("--stop-date")
 
     parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
 
@@ -122,7 +151,6 @@ def get_settings() -> tuple[ArchiverSettings, int]:
     args = _create_parser().parse_args()
 
     rerun = int(args.rerun) if args.rerun and int(args.rerun) > 0 else 1
-    max_posts = int(args.max_posts) if args.max_posts else None
 
     if args.driver is None or args.driver == "chrome":
         driver = Driver.CHROME
@@ -131,24 +159,25 @@ def get_settings() -> tuple[ArchiverSettings, int]:
     else:
         raise Exception("Unsupported driver type!")
 
-    # if args.max_tasks is not None and args.max_task < 1:
-    #     print("--max-tasks must be at least 1")
-
     return (
         ArchiverSettings(
             url=shlex.split(args.url)[0],
             output_dir=args.output_dir,
             cookie_path=args.cookie_path,
-            max_posts=max_posts,
+            max_posts=args.max_posts,
             headless=(not args.not_headless),
             driver=driver,
             members_only=args.members_only,
             profile_dir=args.profile_dir,
             profile_name=args.profile_name,
-            save_comments=args.save_comments,
+            save_comments_types=(
+                set([CommentType.from_str(ty) for ty in args.save_comments])
+                if args.save_comments
+                else []
+            ),
+            max_comments=args.max_comments,
             take_screenshots=args.take_screenshots,
             skip_existing=args.skip_existing,
-            # max_tasks=args.max_tasks,
         ),
         rerun,
     )
