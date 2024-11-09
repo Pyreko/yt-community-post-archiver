@@ -93,8 +93,9 @@ The tool supports two methods:
 
 #### Use browser profile
 
-You can re-use an existing browser profile that is logged into your YouTube account to grab membership posts with the `-p` flag, where the path is where
-your user profiles are located (for example, in Chrome, you can find this with `chrome://version`). For example:
+I've found this way works a bit better from personal experience. You can re-use an existing browser profile that is
+logged into your YouTube account to grab membership posts with the `-p` flag, where the path is where your user
+profiles are located (for example, in Chrome, you can find this with `chrome://version`). For example:
 
 ```shell
 venv/bin/python archiver.py -o output/ -p ~/.config/chromium/  "https://www.youtube.com/@WatsonAmelia/membership"
@@ -132,5 +133,6 @@ python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -d "firefo
 
 ### How does this work?
 
-This is just a typical Selenium program, that's it. As such, it's simulating being a user and manually copying + formatting all the data. This
-is very evident if you disable headless mode, and see all the action.
+This is just a typical Selenium/BeautifulSoup program, that's it. As such, it's simulating being a user and manually
+copying + formatting all the data via a browser window. This is very evident if you disable headless mode,
+and see all the action.
