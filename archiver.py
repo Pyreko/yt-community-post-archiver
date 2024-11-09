@@ -3,7 +3,6 @@
 from pathlib import Path
 import time
 from typing import List, Tuple
-import selenium
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 import os
@@ -66,7 +65,7 @@ class Archiver:
         self.output_dir = output_dir
         self.seen = set()
         self.max_posts = settings.max_posts
-        self.members_only = settings.members_only
+        self.members = settings.members
         self.skip_existing = settings.skip_existing
         self.take_screenshots = settings.take_screenshots
         self.save_comments_types = settings.save_comments_types
@@ -111,7 +110,7 @@ class Archiver:
                     post=post,
                     url=url,
                     output_dir=self.output_dir,
-                    members_only=self.members_only,
+                    members=self.members,
                     save_comments_types=self.save_comments_types,
                     max_comments=self.max_comments,
                 )

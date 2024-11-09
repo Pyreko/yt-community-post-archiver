@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
-from arguments import CommentType
+from arguments import CommentType, MembersPostType
 from comment import build_comment
 from helpers import (
     LOAD_SLEEP_SECS,
@@ -148,7 +148,7 @@ class PostBuilder:
     url: str
     take_screenshots: bool
     output_dir: str
-    members_only: bool
+    members: Optional[MembersPostType]
     save_comments_types: Set[CommentType]
     max_comments: Optional[int]
 
@@ -287,11 +287,15 @@ class PostBuilder:
         relative_date = post_link.text
         is_members = _is_members_post(post)
 
-        if self.members_only and (not is_members):
-            print(
-                "Skipping as it is not a members post and members-only is configured."
-            )
-            return
+        if self.members is not None:
+            if self.members == MembersPostType.MEMBERS_ONLY and (not is_members):
+                print(
+                    "Skipping as it is not a members post and members-only is configured."
+                )
+                return
+            elif self.members == MembersPostType.NO_MEMBERS and is_members:
+                print("Skipping as it is a members post and no-members is configured.")
+                return
 
         links = _get_links(post)
         images = _get_images(post)

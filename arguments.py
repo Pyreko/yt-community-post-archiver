@@ -35,11 +35,30 @@ class CommentType(Enum):
                 raise Exception("Unsupported comment type!")
 
 
+@unique
+class MembersPostType(Enum):
+    """
+    Whether to store members posts only or ignore members posts entirely.
+    """
+
+    MEMBERS_ONLY = 1
+    NO_MEMBERS = 2
+
+    def from_str(s: str):
+        match s:
+            case "members-only":
+                return MembersPostType.MEMBERS_ONLY
+            case "no-members":
+                return MembersPostType.NO_MEMBERS
+            case _:
+                raise Exception("Unsupported members post type!")
+
+
 @dataclass
 class ArchiverSettings:
     url: str
     output_dir: Optional[str]
-    members_only: bool
+    members: Optional[MembersPostType]
     headless: bool
     cookie_path: Optional[str]
     max_posts: Optional[int]
@@ -97,7 +116,7 @@ def _create_parser() -> argparse.ArgumentParser:
         type=int,
         required=False,
         default=None,
-        help="Set a limit on how many posts to download.",
+        help="Set a limit on how many posts to check. Skipped posts will count towards this.",
     )
     parser.add_argument(
         "-d",
@@ -109,7 +128,11 @@ def _create_parser() -> argparse.ArgumentParser:
         choices=["firefox", "chrome"],
     )
     parser.add_argument(
-        "--members-only", action="store_true", help="Only save members posts."
+        "--members",
+        type=str,
+        required=False,
+        help="Control whether to store members-only posts or ignore members-only posts. Don't set to save all posts seen.",
+        choices=["members-only", "no-members"],
     )
     parser.add_argument(
         "--not-headless",
@@ -167,7 +190,7 @@ def get_settings() -> tuple[ArchiverSettings, int]:
             max_posts=args.max_posts,
             headless=(not args.not_headless),
             driver=driver,
-            members_only=args.members_only,
+            members=MembersPostType.from_str(args.members) if args.members else None,
             profile_dir=args.profile_dir,
             profile_name=args.profile_name,
             save_comments_types=(
