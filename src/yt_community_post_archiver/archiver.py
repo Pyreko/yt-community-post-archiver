@@ -253,8 +253,8 @@ def main():
                     print(f"===== Run {i + 1} ======")
                 archiver.scrape()
         print("Done!")
-    except SystemExit:
-        sys.exit(1)
+    except SystemExit as sys_ex:
+        sys.exit(sys_ex.code)
     except Exception:
         print("Encountered a fatal error:")
         traceback.print_exc()

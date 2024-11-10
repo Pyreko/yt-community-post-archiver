@@ -16,6 +16,8 @@ jobs:
   build:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
@@ -26,14 +28,16 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
 
-      - name: Install hatch
-        run: pip install hatch
+      - name: Install Hatch
+        uses: pypa/hatch@install
+        with:
+          version: 1.13.0
 
       - name: Build wheel
         run: hatch build -t wheel
 
-      - name: Upload wheel if not nightly
-        if: ${{ inputs.version }} == "nightly"
+      - name: Upload wheel if nightly
+        if: ${{ inputs.version == 'nightly' }}
         uses: softprops/action-gh-release@v2.0.9
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +50,7 @@ jobs:
             ./dist/*
 
       - name: Upload wheel if not nightly
-        if: ${{ inputs.version }} != "nightly"
+        if: ${{ inputs.version != 'nightly' }}
         uses: softprops/action-gh-release@v2.0.9
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -73,7 +77,8 @@ jobs:
   pypi-publish:
     name: Upload release to PyPI
     runs-on: ubuntu-latest
-    if: ${{ inputs.version }} != "nightly"
+    if: ${{ inputs.version != 'nightly' }}
+    needs: [build]
     environment:
       name: pypi
       url: https://pypi.org/p/yt-community-post-archiver
@@ -89,8 +94,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
 
-      - name: Install hatch
-        run: pip install hatch
+      - name: Install Hatch
+        uses: pypa/hatch@install
+        with:
+          version: 1.13.0
 
       - name: Build wheel
         run: hatch build -t wheel

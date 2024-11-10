@@ -1,18 +1,46 @@
 # yt-community-post-archiver
 
 Archives YouTube community posts. Will try and grab the post's text content, images at
-as large of a resolution as possible, polls, and some other various metadata.
+as large of a resolution as possible, polls, and some other various bits of metadata.
+Works on members posts too.
 
-Note this was written _really_ quickly, and might not work every time (my Python is also
-a bit shit). It is also a bit fragile, and YT updates might break it. Feel free to let
-me know if it's broken, and if I have the bandwidth I'll try and fix it.
+Note this was initially written _really_ quickly, and might not work every time
+(my Python is also only good at a scripting level). It is also a bit fragile,
+and YT updates might break it. Feel free to let me know if it's broken, and if I
+have the bandwidth I'll try and fix it.
 
 ## Usage
 
+### From pypi
+
+The script is available via [pypi](https://pypi.org/project/yt-community-post-archiver/):
+
+1. [Install Python](https://www.python.org/downloads/).
+2. Install via `pip` (or alternatives like [`pipx`](https://github.com/pypa/pipx)):
+
+    ```shell
+    pip install yt-community-post-archiver
+    ```
+
+3. Run `yt-community-post-archiver`. For example:
+
+   ```shell
+   yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community"
+   ```
+
+   This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
+   it can find from the provided page, and save text metadata + images in an automatically created folder called
+   `archive-output` in the same directory the program was called in. Note this will take a while!
+
+   For info on the options you can use, run with `--help`:
+
+   ```shell
+   yt-community-post-archiver --help
+   ```
+
 ### From the wheel
 
-This is _probably_ what you're going to want. From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases)
-install a wheel using Python.
+From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), you can install a wheel for this using Python.
 
 1. [Install Python](https://www.python.org/downloads/).
 
@@ -88,7 +116,7 @@ hatch run yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -
 This runs the archiver, directed to `https://www.youtube.com/@IRyS/community`, saving to `output/testing`, and gets
 a maximum of one post.
 
-At the time of writing, this gives me two files - `post.json`:
+At the time of writing, this gives me two files that look like this - `post.json`:
 
 ```json
 {
@@ -111,7 +139,8 @@ At the time of writing, this gives me two files - `post.json`:
 }
 ```
 
-and an image file (`Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo-0`).
+and an image file (`Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo-0`). Note that some details may change throughout the versions;
+this document should be updated to reflect that though.
 
 ### Set save location
 
