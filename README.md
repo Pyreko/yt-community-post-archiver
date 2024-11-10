@@ -105,7 +105,7 @@ From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), 
    hatch run yt-community-post-archiver --help
    ```
 
-### Example
+### Examples
 
 For example, let's say I ran:
 
@@ -142,7 +142,7 @@ At the time of writing, this gives me two files that look like this - `post.json
 and an image file (`Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo-0`). Note that some details may change throughout the versions;
 this document should be updated to reflect that though.
 
-### Set save location
+#### Set save location
 
 If you want to set the save location, then use `-o`:
 
@@ -150,12 +150,12 @@ If you want to set the save location, then use `-o`:
 hatch run yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "/home/me/my_save"
 ```
 
-### Logging in
+#### Logging in
 
 You may want to provide a logged-in instance to this tool as this is the only way to get membership posts or certain details like poll vote percentages.
 The tool supports two methods:
 
-#### Use browser profile
+##### Use browser profile
 
 I've found this way works a bit better from personal experience. You can re-use an existing browser profile that is
 logged into your YouTube account to grab membership posts with the `-p` flag, where the path is where your user
@@ -167,7 +167,7 @@ venv/bin/python archiver.py -o output/ -p ~/.config/chromium/  "https://www.yout
 
 By default this will use the default profile name; if you need to override this then use `-n` as well.
 
-#### Use cookies file
+##### Use cookies file
 
 Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c`:
 
@@ -179,7 +179,7 @@ Note that I've personally found this much flakier and occasionally fails in cert
 work fine if you just want to get a few posts though, and already have a cookie file for things like
 `ytarchive`.
 
-### Use Firefox instead of Chrome as the driver
+#### Use Firefox instead of Chrome as the driver
 
 The default driver is Chrome, but Firefox should work as well.
 
@@ -187,7 +187,7 @@ The default driver is Chrome, but Firefox should work as well.
 hatch run yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community" -d "firefox"
 ```
 
-## Notes
+### Notes
 
 - Poll vote percentages can only be shown if you are logged in due to how vote results are only shown if the user has voted before.
   - If you have not voted on the poll before, the tool will temporarily vote for you to grab vote percentages, but will then try to undo the
