@@ -33,6 +33,13 @@ jobs:
       - name: Build wheel
         run: hatch build -t wheel
 
+      - name: Delete the old nightly release
+        run: |
+          gh release delete nightly --cleanup-tag
+          sleep 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create nightly release
         uses: softprops/action-gh-release@v2.0.9
         with:
