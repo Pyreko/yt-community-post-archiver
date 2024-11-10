@@ -102,19 +102,20 @@ From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), 
    For info on the options you can use, run with `--help`:
 
    ```shell
-   hatch run yt-community-post-archiver --help
+   yt-community-post-archiver --help
    ```
 
 ### Examples
 
-For example, let's say I ran:
+For example, let's say I run:
 
 ```shell
-hatch run yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "output/testing" -m 1  
+yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "output/testing" -m 1  
 ```
 
 This runs the archiver, directed to `https://www.youtube.com/@IRyS/community`, saving to `output/testing`, and gets
-a maximum of one post.
+a maximum of one post. If you are running from the repo, then replace `yt-community-post-archiver` with
+`hatch run yt-community-post-archiver`. 
 
 At the time of writing, this gives me two files that look like this - `post.json`:
 
@@ -139,15 +140,15 @@ At the time of writing, this gives me two files that look like this - `post.json
 }
 ```
 
-and an image file (`Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo-0`). Note that some details may change throughout the versions;
-this document should be updated to reflect that though.
+and an image file called `Ugkxljr0040TiZZTAVON7GBtrPz8jJEZQVP8-0.jpg`, containing the included image. Note that some
+details may change throughout the versions; this document should be updated to reflect that though.
 
 #### Set save location
 
 If you want to set the save location, then use `-o`:
 
 ```shell
-hatch run yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "/home/me/my_save"
+yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "/home/me/my_save"
 ```
 
 #### Logging in
@@ -162,7 +163,7 @@ logged into your YouTube account to grab membership posts with the `-p` flag, wh
 profiles are located (for example, in Chrome, you can find this with `chrome://version`). For example:
 
 ```shell
-venv/bin/python archiver.py -o output/ -p ~/.config/chromium/  "https://www.youtube.com/@WatsonAmelia/membership"
+yt-community-post-archiver -o output/ -p ~/.config/chromium/  "https://www.youtube.com/@WatsonAmelia/membership"
 ```
 
 By default this will use the default profile name; if you need to override this then use `-n` as well.
@@ -172,7 +173,7 @@ By default this will use the default profile name; if you need to override this 
 Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c`:
 
 ```shell
-hatch run yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/community" -c "/home/me/my_cookies_file.txt"
+yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/community" -c "/home/me/my_cookies_file.txt"
 ```
 
 Note that I've personally found this much flakier and occasionally fails in certain situations. It should
@@ -184,7 +185,7 @@ work fine if you just want to get a few posts though, and already have a cookie 
 The default driver is Chrome, but Firefox should work as well.
 
 ```shell
-hatch run yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community" -d "firefox"
+yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community" -d "firefox"
 ```
 
 ### Notes
