@@ -11,10 +11,36 @@ have the bandwidth I'll try and fix it.
 
 ## Usage
 
+### From pypi
+
+The script is available via [pypi](https://pypi.org/project/yt-community-post-archiver/):
+
+1. [Install Python](https://www.python.org/downloads/).
+2. Install via `pip` (or alternatives like [`pipx`](https://github.com/pypa/pipx)):
+
+    ```shell
+    pip install yt-community-post-archiver
+    ```
+
+3. Run `yt-community-post-archiver`. For example:
+
+   ```shell
+   yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community"
+   ```
+
+   This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
+   it can find from the provided page, and save text metadata + images in an automatically created folder called
+   `archive-output` in the same directory the program was called in. Note this will take a while!
+
+   For info on the options you can use, run with `--help`:
+
+   ```shell
+   yt-community-post-archiver --help
+   ```
+
 ### From the wheel
 
-This is _probably_ what you're going to want. From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases)
-install a wheel using Python.
+From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), you can install a wheel for this using Python.
 
 1. [Install Python](https://www.python.org/downloads/).
 

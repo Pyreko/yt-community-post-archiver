@@ -5,6 +5,8 @@ from enum import Enum, unique
 
 from yt_community_post_archiver.helpers import Driver
 
+__version__ = "0.1.1"
+
 
 @unique
 class CommentType(Enum):
@@ -162,6 +164,13 @@ def _create_parser() -> argparse.ArgumentParser:
         "--skip-existing",
         action="store_true",
         help="Skip any posts if the save location already contains data.",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        help="Prints version information.",
+        version=f"%(prog)s {__version__}",
     )
 
     parser.add_argument("url", type=str, help="The URL to try and grab posts from.")
