@@ -1,6 +1,8 @@
 import os
-import sys
 import subprocess
+import sys
+
+ARCHIVER = "yt_community_post_archiver"
 
 
 def test_basic_works(tmp_path):
@@ -13,13 +15,15 @@ def test_basic_works(tmp_path):
     subprocess.run(
         [
             "python3",
-            "archiver.py",
+            "-m",
+            ARCHIVER,
             "https://www.youtube.com/@IRyS/community",
             "-o",
             tmp_path,
             "-m",
             str(to_download),
         ],
+        cwd="src/",
         check=True,
     )
 
@@ -42,13 +46,15 @@ def test_poll(tmp_path):
     subprocess.run(
         [
             "python3",
-            "archiver.py",
+            "-m",
+            ARCHIVER,
             "https://www.youtube.com/post/UgkxeuDjcdp6k56ltsrTvTAHhz0IokY3kOkn",
             "-o",
             tmp_path,
             "-m",
             "1",
         ],
+        cwd="src/",
         check=True,
     )
 
@@ -73,7 +79,8 @@ def test_screenshots(tmp_path):
     subprocess.run(
         [
             "python3",
-            "archiver.py",
+            "-m",
+            ARCHIVER,
             "https://www.youtube.com/@IRyS/community",
             "-o",
             tmp_path,
@@ -81,6 +88,7 @@ def test_screenshots(tmp_path):
             str(to_download),
             "--take-screenshots",
         ],
+        cwd="src/",
         check=True,
     )
 
@@ -119,12 +127,14 @@ def test_screenshots_2(tmp_path):
         subprocess.run(
             [
                 "python3",
-                "archiver.py",
+                "-m",
+                ARCHIVER,
                 to_test,
                 "-o",
                 test_tmp_path,
                 "--take-screenshots",
             ],
+            cwd="src/",
             check=True,
         )
 
@@ -152,13 +162,15 @@ def test_single_image(tmp_path):
     subprocess.run(
         [
             "python3",
-            "archiver.py",
+            "-m",
+            ARCHIVER,
             "https://www.youtube.com/post/UgkxqhALbEMFN0N-bjHVhp5LK4bq0RUwSOz7",
             "-o",
             tmp_path,
             "-m",
             "1",
         ],
+        cwd="src/",
         check=True,
     )
 
@@ -182,13 +194,15 @@ def test_multi_images(tmp_path):
     subprocess.run(
         [
             "python3",
-            "archiver.py",
+            "-m",
+            ARCHIVER,
             "https://www.youtube.com/post/Ugkx3chE1Bm5UFsuMTrcpkT2L9BuMJUBQIuX",
             "-o",
             tmp_path,
             "-m",
             "1",
         ],
+        cwd="src/",
         check=True,
     )
 
@@ -218,7 +232,8 @@ def test_comments(tmp_path):
         subprocess.run(
             [
                 "python3",
-                "archiver.py",
+                "-m",
+                ARCHIVER,
                 "https://www.youtube.com/post/UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
                 "-o",
                 test_path,
@@ -227,6 +242,7 @@ def test_comments(tmp_path):
                 "--max-comments",
                 "5",
             ],
+            cwd="src/",
             check=True,
         )
 

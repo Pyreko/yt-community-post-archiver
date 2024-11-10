@@ -1,13 +1,13 @@
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import json
 import os
-from typing import Optional
-from bs4 import BeautifulSoup
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.common.by import By
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
-from post import get_post_id
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
+
+from yt_community_post_archiver.post import get_post_id
 
 
 def _get_comment_id(url: str) -> str:
@@ -16,24 +16,24 @@ def _get_comment_id(url: str) -> str:
 
 @dataclass
 class Comment:
-    author: Optional[str]
-    relative_date: Optional[str]
-    member_length: Optional[str]
-    likes: Optional[str]
+    author: str | None
+    relative_date: str | None
+    member_length: str | None
+    likes: str | None
     is_hearted: bool
     is_pinned: bool
-    contents: Optional[str]
-    replies: Optional[str]
-    link: Optional[str]
+    contents: str | None
+    replies: str | None
+    link: str | None
     when_archived: str
 
     def save(self, output_dir: str, post_url: str):
-        id = get_post_id(post_url)
-        comment_dir = os.path.join(output_dir, id, "comments")
+        post_id = get_post_id(post_url)
+        comment_dir = os.path.join(output_dir, post_id, "comments")
         if not os.path.exists(comment_dir):
             try:
                 os.mkdir(comment_dir)
-            except:
+            except Exception:
                 print(f"err: couldn't make directory at {comment_dir}")
                 return
 
@@ -50,11 +50,11 @@ class Comment:
                     default=lambda o: o.__dict__,
                     skipkeys=True,
                 )
-        except:
+        except Exception:
             print(f"err: couldn't save comment data dump at {comment_path}")
 
 
-def _get_author(comment: WebElement) -> Optional[str]:
+def _get_author(comment: WebElement) -> str | None:
     possible_author = comment.find_elements(By.ID, "author-text")
     if possible_author:
         author = possible_author[0].text.strip()
@@ -72,13 +72,13 @@ def _get_author(comment: WebElement) -> Optional[str]:
     return None
 
 
-def _get_relative_date(comment: WebElement) -> Optional[str]:
+def _get_relative_date(comment: WebElement) -> str | None:
     possible_relative_date = comment.find_elements(By.ID, "published-time-text")
     relative_date = possible_relative_date[0].text.strip()
     return relative_date if relative_date else None
 
 
-def _get_member_length(comment: WebElement) -> Optional[str]:
+def _get_member_length(comment: WebElement) -> str | None:
     possible_member_length = comment.find_elements(By.ID, "custom-badge")
 
     if not possible_member_length:
@@ -95,7 +95,7 @@ def _get_member_length(comment: WebElement) -> Optional[str]:
     return length if length else None
 
 
-def _get_likes(comment: WebElement) -> Optional[str]:
+def _get_likes(comment: WebElement) -> str | None:
     possible_likes = comment.find_elements(By.ID, "vote-count-middle")
 
     if not possible_likes:
@@ -121,7 +121,7 @@ def _get_is_pinned(comment: WebElement) -> bool:
     return possible_pins[0].is_displayed()
 
 
-def _get_contents(comment: WebElement) -> Optional[str]:
+def _get_contents(comment: WebElement) -> str | None:
     # This is SO hardcoded holy SHIT. Definitely test this one.
     # Also I could probably do this all with bs4 but for whatever
     # reason we get this mess lol.
@@ -153,7 +153,7 @@ def _get_contents(comment: WebElement) -> Optional[str]:
     return text
 
 
-def _get_replies(comment: WebElement) -> Optional[str]:
+def _get_replies(comment: WebElement) -> str | None:
     possible_replies = comment.find_elements(By.ID, "more-replies")
     if not possible_replies:
         return None
@@ -182,5 +182,5 @@ def build_comment(comment: WebElement, link: str) -> Comment:
         contents=contents,
         replies=replies,
         link=link,
-        when_archived=str(datetime.now(tz=timezone.utc)),
+        when_archived=str(datetime.now(tz=UTC)),
     )

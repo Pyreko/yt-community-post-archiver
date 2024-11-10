@@ -1,0 +1,99 @@
+# A simple workflow to build a wheel + binary.
+
+name: build
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The version to upload. Defaults to 'nightly' if not specified."
+        required: false
+        default: "nightly"
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  build:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install hatch
+        run: pip install hatch
+
+      - name: Build wheel
+        run: hatch build -t wheel
+
+      - name: Upload wheel if not nightly
+        if: ${{ inputs.version }} == "nightly"
+        uses: softprops/action-gh-release@v2.0.9
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: true
+          tag_name: "nightly"
+          draft: false
+          fail_on_unmatched_files: true
+          name: ${{ inputs.version }} Release
+          files: |
+            ./dist/*
+
+      - name: Upload wheel if not nightly
+        if: ${{ inputs.version }} != "nightly"
+        uses: softprops/action-gh-release@v2.0.9
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          tag_name: ${{ inputs.version }}
+          draft: true
+          fail_on_unmatched_files: true
+          name: ${{ inputs.version }} Release
+          body: |
+            <!-- Rest of summary -->
+
+            ---
+
+            ## Features
+
+
+            ## Changes
+
+
+            ## Bug Fixes
+          files: |
+            ./dist/*
+
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    if: ${{ inputs.version }} != "nightly"
+    environment:
+      name: pypi
+      url: https://pypi.org/p/yt-community-post-archiver
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install hatch
+        run: pip install hatch
+
+      - name: Build wheel
+        run: hatch build -t wheel
+
+      - name: Upload to pypi
+        uses: pypa/gh-action-pypi-publish@release/v1

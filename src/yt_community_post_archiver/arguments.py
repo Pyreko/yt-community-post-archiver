@@ -1,10 +1,9 @@
 import argparse
+import shlex
 from dataclasses import dataclass
 from enum import Enum, unique
-import shlex
-from typing import Optional, Set
 
-from helpers import Driver
+from yt_community_post_archiver.helpers import Driver
 
 
 @unique
@@ -57,16 +56,16 @@ class MembersPostType(Enum):
 @dataclass
 class ArchiverSettings:
     url: str
-    output_dir: Optional[str]
-    members: Optional[MembersPostType]
+    output_dir: str | None
+    members: MembersPostType | None
     headless: bool
-    cookie_path: Optional[str]
-    max_posts: Optional[int]
-    profile_dir: Optional[str]
-    profile_name: Optional[str]
+    cookie_path: str | None
+    max_posts: int | None
+    profile_dir: str | None
+    profile_name: str | None
     driver: Driver
-    save_comments_types: Set[CommentType]
-    max_comments: Optional[int]
+    save_comments_types: set[CommentType]
+    max_comments: int | None
     take_screenshots: bool
     skip_existing: bool
 

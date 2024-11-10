@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "yt-community-post-archiver"
+dynamic = ["version"]
+description = 'Archives YouTube community posts.'
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+keywords = ["youtube", "community", "posts", "archiver", "cli"]
+authors = [{ name = "Pyreko", email = "25498386+Pyreko@users.noreply.github.com" }]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "attrs==24.2.0",
+  "certifi==2024.7.4",
+  "charset-normalizer==3.3.2",
+  "h11==0.14.0",
+  "idna==3.7",
+  "outcome==1.3.0.post0",
+  "PySocks==1.7.1",
+  "requests==2.31.0",
+  "selenium==4.16.0",
+  "sniffio==1.3.0",
+  "sortedcontainers==2.4.0",
+  "trio==0.26.2",
+  "trio-websocket==0.11.1",
+  "urllib3==2.1.0",
+  "wsproto==1.2.0",
+  "filetype==1.2.0",
+  "pillow==10.4.0",
+  "beautifulsoup4==4.12.3 ",
+]
+
+[project.urls]
+Documentation = "https://github.com/Pyreko/yt-community-post-archiver#readme"
+Issues = "https://github.com/Pyreko/yt-community-post-archiver/issues"
+Source = "https://github.com/Pyreko/yt-community-post-archiver"
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+line-length = 140
+
+[tool.hatch.version]
+path = "src/yt_community_post_archiver/__about__.py"
+
+[tool.hatch.envs.hatch-test]
+dependencies = ["pytest~=8.3"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/yt_community_post_archiver"]
+
+[project.scripts]
+yt-community-post-archiver = "yt_community_post_archiver:main"
+
+[tool.hatch.build.targets.binary]
+yt-community-post-archiver = "yt_community_post_archiver:main"
+python-version = "3.12"
+pyapp-version = "0.24.0"
