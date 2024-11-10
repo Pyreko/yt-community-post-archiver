@@ -1,24 +1,25 @@
-from dataclasses import dataclass
+import io
 import os
 import time
-from typing import List, Optional, Set, Tuple, Union
+from dataclasses import dataclass
+from datetime import UTC, datetime
+
+from PIL import Image
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.common.by import By
-from arguments import CommentType, MembersPostType
-from comment import build_comment
-from helpers import (
+
+from yt_community_post_archiver.arguments import CommentType, MembersPostType
+from yt_community_post_archiver.comment import build_comment
+from yt_community_post_archiver.helpers import (
     LOAD_SLEEP_SECS,
     close_current_tab,
     find_post_element,
     get_post_link,
 )
-from datetime import timezone, datetime
-import io
-from PIL import Image
-from selenium.webdriver.common.action_chains import ActionChains
-from post import Poll, PollEntry, Post, get_post_id
+from yt_community_post_archiver.post import Poll, PollEntry, Post, get_post_id
 
 
 def _is_members_post(post: WebElement) -> bool:
@@ -26,8 +27,8 @@ def _is_members_post(post: WebElement) -> bool:
 
 
 def get_true_comment_count(
-    driver: Union[ChromeWebDriver, FirefoxWebDriver],
-) -> Optional[str]:
+    driver: ChromeWebDriver | FirefoxWebDriver,
+) -> str | None:
     comment_elements = driver.find_elements(By.TAG_NAME, "ytd-comments")
     if comment_elements:
         count = comment_elements[0].find_elements(By.ID, "count")
@@ -37,17 +38,17 @@ def get_true_comment_count(
     return None
 
 
-def _get_likes(post: WebElement) -> Optional[int]:
+def _get_likes(post: WebElement) -> int | None:
     thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
     return thumbs_elements[0].text if thumbs_elements else None
 
 
-def _get_links(post: WebElement) -> List[str]:
+def _get_links(post: WebElement) -> list[str]:
     # Filter out the first link as it will always be the channel. Also filter out any accounts.google.com links.
     return list(
         dict.fromkeys(
             filter(
-                lambda link: link is not None and (not "accounts.google.com" in link),
+                lambda link: link is not None and ("accounts.google.com" not in link),
                 (
                     link.get_attribute("href")
                     for link in post.find_elements(By.TAG_NAME, "a")
@@ -57,7 +58,7 @@ def _get_links(post: WebElement) -> List[str]:
     )[1:]
 
 
-def _get_images(post: WebElement) -> List[str]:
+def _get_images(post: WebElement) -> list[str]:
     # To get all images, we may need to load them all. Look for a button indicating multiple images first, click it
     # until it disappears, at which point all images should be loaded.
     img_buttons = post.find_elements(By.ID, "right-arrow")
@@ -79,7 +80,7 @@ def _get_images(post: WebElement) -> List[str]:
     ]
 
 
-def _get_approximate_num_comments(post: WebElement) -> Optional[int]:
+def _get_approximate_num_comments(post: WebElement) -> int | None:
     comment_elements = post.find_elements(By.ID, "reply-button-end")
     return (
         comment_elements[0].text.strip().split("\n")[0].strip()
@@ -96,8 +97,8 @@ def _get_text(post: WebElement) -> str:
 
 
 def _get_poll(
-    post: WebElement, driver: Union[ChromeWebDriver, FirefoxWebDriver]
-) -> Optional[Poll]:
+    post: WebElement, driver: ChromeWebDriver | FirefoxWebDriver
+) -> Poll | None:
     poll_elements = post.find_elements(By.CLASS_NAME, "choice-info")
     if poll_elements:
         # We want to click on the poll if we are signed in, and can't see a percentage.
@@ -143,23 +144,23 @@ def _get_poll(
 
 @dataclass
 class PostBuilder:
-    driver: Union[ChromeWebDriver, FirefoxWebDriver]
+    driver: ChromeWebDriver | FirefoxWebDriver
     post: WebElement
     url: str
     take_screenshots: bool
     output_dir: str
-    members: Optional[MembersPostType]
-    save_comments_types: Set[CommentType]
-    max_comments: Optional[int]
+    members: MembersPostType | None
+    save_comments_types: set[CommentType]
+    max_comments: int | None
 
-    def __open_post_in_tab(self, url: str) -> Optional[WebElement]:
+    def __open_post_in_tab(self, url: str) -> WebElement | None:
         self.driver.switch_to.new_window("tab")
         self.driver.get(url)
         time.sleep(LOAD_SLEEP_SECS)
 
         return find_post_element(self.driver)
 
-    def __take_screenshots(self, new_tab_post: Optional[WebElement]):
+    def __take_screenshots(self, new_tab_post: WebElement | None):
         if new_tab_post is None:
             return
 
@@ -174,8 +175,8 @@ class PostBuilder:
                 more[0].click()
 
         action.scroll_to_element(new_tab_post).perform()
-        id = get_post_id(self.url)
-        screenshot = os.path.join(self.output_dir, id, "screenshot.png")
+        post_id = get_post_id(self.url)
+        screenshot = os.path.join(self.output_dir, post_id, "screenshot.png")
         img_bytes = new_tab_post.screenshot_as_png
         img = Image.open(io.BytesIO(img_bytes))
         img.save(screenshot)
@@ -183,7 +184,7 @@ class PostBuilder:
     def __get_comments(self):
         seen_comments = set()
 
-        def get_link(comment: WebElement) -> Optional[str]:
+        def get_link(comment: WebElement) -> str | None:
             possible_relative_date = comment.find_elements(By.ID, "published-time-text")
             if not possible_relative_date:
                 return None
@@ -191,7 +192,7 @@ class PostBuilder:
             possible_links = possible_relative_date[0].find_elements(By.TAG_NAME, "a")
             return possible_links[0].get_attribute("href") if possible_links else None
 
-        def get_comment_elements() -> List[Tuple[WebElement, str]]:
+        def get_comment_elements() -> list[tuple[WebElement, str]]:
             prospective_comments = self.driver.find_elements(
                 By.TAG_NAME, "ytd-comment-thread-renderer"
             )
@@ -199,9 +200,8 @@ class PostBuilder:
 
             for pc in prospective_comments:
                 link = get_link(pc)
-                if link:
-                    if link not in seen_comments:
-                        to_return.append((pc, link))
+                if link and link not in seen_comments:
+                    to_return.append((pc, link))
 
             return to_return
 
@@ -274,7 +274,7 @@ class PostBuilder:
                 if no_new_comments_counter >= 5:
                     break
 
-    def process_post(self) -> Optional[Post]:
+    def process_post(self) -> Post | None:
         post = self.post
         url = self.url
 
@@ -293,7 +293,8 @@ class PostBuilder:
                     "Skipping as it is not a members post and members-only is configured."
                 )
                 return
-            elif self.members == MembersPostType.NO_MEMBERS and is_members:
+
+            if self.members == MembersPostType.NO_MEMBERS and is_members:
                 print("Skipping as it is a members post and no-members is configured.")
                 return
 
@@ -306,7 +307,7 @@ class PostBuilder:
 
         # The following block may require opening things in a new tab.
         num_comments = get_true_comment_count(self.driver)
-        opened_post: Union[None, WebElement] = None
+        opened_post: None | WebElement = None
         opened_tab = False
 
         # If there are no comments then we must not be in the post link itself.
@@ -329,7 +330,7 @@ class PostBuilder:
             num_comments=num_comments,
             num_thumbs_up=num_thumbs_up,
             poll=poll,
-            when_archived=str(datetime.now(tz=timezone.utc)),
+            when_archived=str(datetime.now(tz=UTC)),
         )
 
         post.save(self.output_dir)

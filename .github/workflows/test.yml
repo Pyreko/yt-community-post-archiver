@@ -12,6 +12,9 @@ on:
 
 jobs:
   test:
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
@@ -21,14 +24,19 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.7"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Install pytest
-        run: pip install pytest
+      - name: Install hatch
+        run: pip install hatch
 
       - name: Run tests
-        run: pytest
+        run: hatch test
+
+      - name: Test building
+        run: hatch build -t wheel
+
+      - name: Test running the binary
+        run: |
+          pip install dist/*.whl
+          yt-community-post-archiver -h

@@ -1,25 +1,26 @@
 #!/usr/bin/python
 
-from pathlib import Path
-import time
-from typing import List, Tuple
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
 import os
-import traceback
-from arguments import ArchiverSettings, get_settings
-from post import get_post_id
-from cookies import parse_cookies
 import signal
 import sys
+import time
+import traceback
+from pathlib import Path
+
 from selenium.webdriver.common.action_chains import ActionChains
-from helpers import (
+from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
+
+from yt_community_post_archiver.arguments import ArchiverSettings, get_settings
+from yt_community_post_archiver.cookies import parse_cookies
+from yt_community_post_archiver.helpers import (
     LOAD_SLEEP_SECS,
     close_current_tab,
-    init_driver,
     get_post_link,
+    init_driver,
 )
-from post_builder import PostBuilder, get_true_comment_count
+from yt_community_post_archiver.post import get_post_id
+from yt_community_post_archiver.post_builder import PostBuilder, get_true_comment_count
 
 
 class Archiver:
@@ -46,7 +47,7 @@ class Archiver:
             height,
         )
 
-        def signal_handler(sig_num, frame):
+        def signal_handler(_sig_num, _frame):
             print("interrupt signal sent, halting...")
             self.driver.quit()
             sys.exit(1)
@@ -76,7 +77,7 @@ class Archiver:
         # whatever reason, if it is used in a new tab.
         self.action = ActionChains(self.driver)
 
-    def find_posts(self) -> List[Tuple[WebElement, str]]:
+    def find_posts(self) -> list[tuple[WebElement, str]]:
         posts = []
 
         for potential_post in self.driver.find_elements(By.ID, "post"):
@@ -226,10 +227,10 @@ class Archiver:
         if not self.skip_existing:
             return False
 
-        id = get_post_id(url)
-        dir = os.path.join(self.output_dir, id)
+        post_id = get_post_id(url)
+        post_output_dir = os.path.join(self.output_dir, post_id)
 
-        return Path(dir).exists()
+        return Path(post_output_dir).exists()
 
     def __enter__(self):
         return self
@@ -258,7 +259,3 @@ def main():
         print("Encountered a fatal error:")
         traceback.print_exc()
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

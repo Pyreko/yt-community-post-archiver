@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
 
 
 @dataclass
@@ -23,7 +22,7 @@ def __to_bool(val: str) -> bool:
     return True if val.lower() == "true" else False
 
 
-def parse_cookies(cookies_file: Path) -> List[Cookie]:
+def parse_cookies(cookies_file: Path) -> list[Cookie]:
     """
     Parses the given `cookies_file` path following the spec as defined by
     https://everything.curl.dev/http/cookies/fileformat, and
@@ -33,7 +32,7 @@ def parse_cookies(cookies_file: Path) -> List[Cookie]:
 
     cookie_list = []
 
-    with open(cookies_file, "r") as f:
+    with open(cookies_file) as f:
         for line in f:
             line = line.lstrip()
 

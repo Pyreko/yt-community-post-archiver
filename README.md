@@ -9,27 +9,25 @@ me know if it's broken, and if I have the bandwidth I'll try and fix it.
 
 ## Usage
 
-1. Clone the repo.
+### From the wheel
 
-2. (Optional) Create and source a venv:
+This is _probably_ what you're going to want. From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases)
+install a wheel using Python.
 
-   ```shell
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+1. [Install Python](https://www.python.org/downloads/).
 
-3. (Optional) Download the dependencies in `requirements.txt` if you do not already have them:
+2. Download one of the `.whl` files from [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases)
 
-   ```shell
-   pip3 install -r requirements.txt
-   ```
+3. Install the wheel file. For example, if the file you downloaded is called `yt_community_post_archiver-0.1.0-py3-none-any.whl`:
 
-4. Make sure the computer you're running this on has Chrome or Firefox, as it uses a browser to grab posts.
+    ```shell
+    pip install yt_community_post_archiver-0.1.0-py3-none-any.whl
+    ```
 
-5. Run `archiver.py`. For example:
+4. Run `yt-community-post-archiver`. For example:
 
    ```shell
-   python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community"
+   yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community"
    ```
 
    This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
@@ -39,7 +37,44 @@ me know if it's broken, and if I have the bandwidth I'll try and fix it.
    For info on the options you can use, run with `--help`:
 
    ```shell
-   python3 archiver.py --help
+   yt-community-post-archiver --help
+   ```
+
+### From the repo
+
+1. Clone the repo.
+
+2. [Install Python](https://www.python.org/downloads/).
+
+3. (Optional) Create and source a venv:
+
+   ```shell
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+4. (Optional) Install `hatch` if you do not already have it:
+
+   ```shell
+   pip3 install hatch
+   ```
+
+5. Make sure the computer you're running this on has Chrome or Firefox, as it uses a browser to grab posts.
+
+6. Run the archiver using `hatch run yt-community-post-archiver`. For example:
+
+   ```shell
+   hatch run yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community"
+   ```
+
+   This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
+   it can find from the provided page, and save text metadata + images in an automatically created folder called
+   `archive-output` in the same directory the program was called in. Note this will take a while!
+
+   For info on the options you can use, run with `--help`:
+
+   ```shell
+   hatch run yt-community-post-archiver --help
    ```
 
 ### Example
@@ -47,7 +82,7 @@ me know if it's broken, and if I have the bandwidth I'll try and fix it.
 For example, let's say I ran:
 
 ```shell
-python3 archiver.py "https://www.youtube.com/@IRyS/community" -o "output/testing" -m 1  
+hatch run yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "output/testing" -m 1  
 ```
 
 This runs the archiver, directed to `https://www.youtube.com/@IRyS/community`, saving to `output/testing`, and gets
@@ -83,7 +118,7 @@ and an image file (`Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo-0`).
 If you want to set the save location, then use `-o`:
 
 ```shell
-python3 archiver.py "https://www.youtube.com/@IRyS/community" -o "/home/me/my_save"
+hatch run yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "/home/me/my_save"
 ```
 
 ### Logging in
@@ -108,7 +143,7 @@ By default this will use the default profile name; if you need to override this 
 Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c`:
 
 ```shell
-python3 archiver.py "https://www.youtube.com/@WatsonAmelia/community" -c "/home/me/my_cookies_file.txt"
+hatch run yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/community" -c "/home/me/my_cookies_file.txt"
 ```
 
 Note that I've personally found this much flakier and occasionally fails in certain situations. It should
@@ -120,7 +155,7 @@ work fine if you just want to get a few posts though, and already have a cookie 
 The default driver is Chrome, but Firefox should work as well.
 
 ```shell
-python3 archiver.py "https://www.youtube.com/@PomuRainpuff/community" -d "firefox"
+hatch run yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community" -d "firefox"
 ```
 
 ## Notes

@@ -1,13 +1,13 @@
 # A series of helper functions to avoid cluttering the main archiver code file.
 
-from enum import Enum, unique
 import time
-from typing import Optional, Union
+from enum import Enum, unique
+
 from selenium import webdriver
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
+from selenium.webdriver.remote.webelement import WebElement
 
 LOAD_SLEEP_SECS = 1
 
@@ -25,11 +25,11 @@ class Driver(Enum):
 def init_driver(
     driver: Driver,
     headless: bool,
-    profile_dir: Optional[str],
-    profile_name: Optional[str],
+    profile_dir: str | None,
+    profile_name: str | None,
     width: int,
     height: int,
-) -> Union[ChromeWebDriver, FirefoxWebDriver]:
+) -> ChromeWebDriver | FirefoxWebDriver:
     """
     Initialize the driver and return it, based on the settings passed.
     """
@@ -71,7 +71,7 @@ def __is_post(candidate: WebElement) -> bool:
     return False
 
 
-def get_post_link(element: WebElement) -> Optional[WebElement]:
+def get_post_link(element: WebElement) -> WebElement | None:
     return next(
         filter(
             __is_post,
@@ -81,9 +81,7 @@ def get_post_link(element: WebElement) -> Optional[WebElement]:
     )
 
 
-def find_post_element(
-    driver: Union[ChromeWebDriver, FirefoxWebDriver]
-) -> Optional[WebElement]:
+def find_post_element(driver: ChromeWebDriver | FirefoxWebDriver) -> WebElement | None:
     potential_posts = driver.find_elements(By.ID, "post")
     if not potential_posts:
         return None
@@ -93,7 +91,7 @@ def find_post_element(
     return post
 
 
-def close_current_tab(driver: Union[ChromeWebDriver, FirefoxWebDriver]) -> bool:
+def close_current_tab(driver: ChromeWebDriver | FirefoxWebDriver) -> bool:
     """
     Try to close the current tab. Return True if there is still a tab after, and False if there
     is no tabs after.

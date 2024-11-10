@@ -1,9 +1,9 @@
-import os
-from typing import List, Optional
-import requests
 import json
+import os
 from dataclasses import dataclass
+
 import filetype
+import requests
 
 
 class PollEntry:
@@ -23,8 +23,8 @@ class PollEntry:
 
 @dataclass
 class Poll:
-    entries: List[PollEntry]
-    total_votes: Optional[str]
+    entries: list[PollEntry]
+    total_votes: str | None
 
 
 def get_post_id(url: str) -> str:
@@ -39,19 +39,19 @@ class Post:
 
     url: str
     text: str
-    images: List[str]
-    links: List[str]
+    images: list[str]
+    links: list[str]
     is_members: bool
     relative_date: str
-    approximate_num_comments: Optional[str]
-    num_comments: Optional[str]
-    num_thumbs_up: Optional[str]
-    poll: Optional[Poll]
+    approximate_num_comments: str | None
+    num_comments: str | None
+    num_thumbs_up: str | None
+    poll: Poll | None
     when_archived: str
 
     def save(self, output_dir: str):
-        id = get_post_id(self.url)
-        dir = os.path.join(output_dir, id)
+        post_id = get_post_id(self.url)
+        dir = os.path.join(output_dir, post_id)
 
         if not os.path.exists(dir):
             try:
@@ -79,7 +79,7 @@ class Post:
                 img_data = requests.get(image).content
                 img_format = filetype.guess(img_data)
                 img_extension = img_format.extension if img_format else "png"
-                img_name = f"{id}-{itx}.{img_extension}"
+                img_name = f"{post_id}-{itx}.{img_extension}"
                 img_path = os.path.join(dir, img_name)
 
                 if not os.path.exists(img_path):
