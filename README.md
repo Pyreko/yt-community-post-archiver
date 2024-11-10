@@ -1,11 +1,13 @@
 # yt-community-post-archiver
 
 Archives YouTube community posts. Will try and grab the post's text content, images at
-as large of a resolution as possible, polls, and some other various metadata.
+as large of a resolution as possible, polls, and some other various bits of metadata.
+Works on members posts too.
 
-Note this was written _really_ quickly, and might not work every time (my Python is also
-a bit shit). It is also a bit fragile, and YT updates might break it. Feel free to let
-me know if it's broken, and if I have the bandwidth I'll try and fix it.
+Note this was initially written _really_ quickly, and might not work every time
+(my Python is also only good at a scripting level). It is also a bit fragile,
+and YT updates might break it. Feel free to let me know if it's broken, and if I
+have the bandwidth I'll try and fix it.
 
 ## Usage
 
@@ -88,7 +90,7 @@ hatch run yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -
 This runs the archiver, directed to `https://www.youtube.com/@IRyS/community`, saving to `output/testing`, and gets
 a maximum of one post.
 
-At the time of writing, this gives me two files - `post.json`:
+At the time of writing, this gives me two files that look like this - `post.json`:
 
 ```json
 {
@@ -111,7 +113,8 @@ At the time of writing, this gives me two files - `post.json`:
 }
 ```
 
-and an image file (`Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo-0`).
+and an image file (`Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo-0`). Note that some details may change throughout the versions;
+this document should be updated to reflect that though.
 
 ### Set save location
 
