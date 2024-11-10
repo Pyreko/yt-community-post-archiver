@@ -1,0 +1,46 @@
+# A simple workflow to build a wheel + binary for the latest commit.
+
+name: nightly
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  build:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install Hatch
+        uses: pypa/hatch@install
+        with:
+          version: 1.13.0
+
+      - name: Build wheel
+        run: hatch build -t wheel
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v2.0.9
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: true
+          tag_name: "nightly"
+          draft: false
+          fail_on_unmatched_files: true
+          name: "nightly"
+          files: |
+            ./dist/*

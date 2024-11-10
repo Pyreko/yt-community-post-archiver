@@ -52,7 +52,7 @@ profile = "black"
 line-length = 140
 
 [tool.hatch.version]
-path = "src/yt_community_post_archiver/__about__.py"
+path = "src/yt_community_post_archiver/arguments.py"
 
 [tool.hatch.envs.hatch-test]
 dependencies = ["pytest~=8.3"]

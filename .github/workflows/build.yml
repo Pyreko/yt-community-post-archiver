@@ -5,9 +5,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "The version to upload. Defaults to 'nightly' if not specified."
-        required: false
-        default: "nightly"
+        description: "The version to upload."
+        required: true
 
 env:
   PYTHON_VERSION: "3.12"
@@ -36,21 +35,7 @@ jobs:
       - name: Build wheel
         run: hatch build -t wheel
 
-      - name: Upload wheel if nightly
-        if: ${{ inputs.version == 'nightly' }}
-        uses: softprops/action-gh-release@v2.0.9
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: true
-          tag_name: "nightly"
-          draft: false
-          fail_on_unmatched_files: true
-          name: ${{ inputs.version }} Release
-          files: |
-            ./dist/*
-
-      - name: Upload wheel if not nightly
-        if: ${{ inputs.version != 'nightly' }}
+      - name: Create release
         uses: softprops/action-gh-release@v2.0.9
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -77,7 +62,6 @@ jobs:
   pypi-publish:
     name: Upload release to PyPI
     runs-on: ubuntu-latest
-    if: ${{ inputs.version != 'nightly' }}
     needs: [build]
     environment:
       name: pypi
