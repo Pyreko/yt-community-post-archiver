@@ -55,7 +55,9 @@ line-length = 140
 path = "src/yt_community_post_archiver/arguments.py"
 
 [tool.hatch.envs.hatch-test]
-dependencies = ["pytest~=8.3"]
+dependencies = ["pytest~=8.3", "pytest-rerunfailures~=15.0"]
+retries = 3
+retry-delay = 10
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/yt_community_post_archiver"]
