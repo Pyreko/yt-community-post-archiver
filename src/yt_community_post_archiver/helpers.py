@@ -1,5 +1,6 @@
 # A series of helper functions to avoid cluttering the main archiver code file.
 
+import os
 import time
 from enum import Enum, unique
 
@@ -58,6 +59,9 @@ def init_driver(
             if headless:
                 options.add_argument("-headless")
 
+            if profile_dir:
+                options.set_preference("profile", f"{profile_dir}")
+
             return webdriver.Firefox(options)
         case _:
             raise Exception("Unsupported driver type!")
@@ -66,7 +70,7 @@ def init_driver(
 def __is_post(candidate: WebElement) -> bool:
     href = candidate.get_attribute("href")
     if href is not None:
-        return ("community?" in href and "lb=" in href)
+        return "community?" in href and "lb=" in href
 
     return False
 

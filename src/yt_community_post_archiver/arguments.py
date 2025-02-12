@@ -86,14 +86,14 @@ def _create_parser() -> argparse.ArgumentParser:
         "--profile-dir",
         type=str,
         required=False,
-        help="The path to where your Chrome profiles are stored. Will not do anything if cookies are set.",
+        help="The path to where your ddriver profiles are stored. Will not do anything if cookies are set.",
     )
     parser.add_argument(
         "-n",
         "--profile-name",
         type=str,
         required=False,
-        help="The profile you want to use. If not set and profile_dir is set, the default profile is used. Will not do anything if cookies are set.",
+        help="[Only for Chrome driver] The profile you want to use. If not set and profile_dir is set, the default profile is used. Will not do anything if cookies are set.",
     )
     parser.add_argument(
         "-c",

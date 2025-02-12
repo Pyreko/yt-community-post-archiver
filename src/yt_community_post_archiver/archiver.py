@@ -10,11 +10,13 @@ from pathlib import Path
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.common.exceptions import MoveTargetOutOfBoundsException
 
 from yt_community_post_archiver.arguments import ArchiverSettings, get_settings
 from yt_community_post_archiver.cookies import parse_cookies
 from yt_community_post_archiver.helpers import (
     LOAD_SLEEP_SECS,
+    Driver,
     close_current_tab,
     get_post_link,
     init_driver,
@@ -46,6 +48,7 @@ class Archiver:
             width,
             height,
         )
+        self.driver_type = settings.driver
 
         def signal_handler(_sig_num, _frame):
             print("interrupt signal sent, halting...")
@@ -88,6 +91,7 @@ class Archiver:
             if url is None or url in self.seen:
                 continue
 
+            # print((potential_post, url))
             posts.append((potential_post, url))
 
         return posts
@@ -118,6 +122,16 @@ class Archiver:
                 break
             except SystemExit:
                 raise SystemExit
+            except MoveTargetOutOfBoundsException as ex:
+                match self.driver_type:
+                    case Driver.CHROME:
+                        attempts += 1
+                        if attempts == MAX_ATTEMPTS:
+                            raise ex
+                        time.sleep(1)
+                    case Driver.FIREFOX:
+                        # See https://stackoverflow.com/questions/44777053/selenium-movetargetoutofboundsexception-with-firefox
+                        self.driver.execute_script("window.scrollBy(0, 500);")
             except Exception as ex:
                 attempts += 1
 
@@ -157,7 +171,7 @@ class Archiver:
 
     def scrape(self):
         # Could use a scrollbar height check instead but idk why but that was flaky sometimes.
-        MAX_SAME_SEEN = 60
+        MAX_SAME_SEEN = 30
 
         try:
             self.driver.get(self.url)
