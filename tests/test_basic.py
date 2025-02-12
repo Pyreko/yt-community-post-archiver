@@ -2,10 +2,13 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 ARCHIVER = "yt_community_post_archiver"
 
 
-def test_basic_works(tmp_path):
+@pytest.mark.parametrize("driver", ["chrome", "firefox"])
+def test_basic_works(tmp_path, driver):
     """
     Simple testing to make sure we can download a few files. This does not verify validity or anything.
     """
@@ -18,6 +21,8 @@ def test_basic_works(tmp_path):
             "-m",
             ARCHIVER,
             "https://www.youtube.com/@IRyS/community",
+            "-d",
+            driver,
             "-o",
             tmp_path,
             "-m",
@@ -38,7 +43,8 @@ def test_basic_works(tmp_path):
     assert num_files == to_download
 
 
-def test_poll(tmp_path):
+@pytest.mark.parametrize("driver", ["chrome", "firefox"])
+def test_poll(tmp_path, driver):
     """
     Simple testing to make sure we can download a poll. This does not verify validity or anything.
     """
@@ -49,6 +55,8 @@ def test_poll(tmp_path):
             "-m",
             ARCHIVER,
             "https://www.youtube.com/post/UgkxeuDjcdp6k56ltsrTvTAHhz0IokY3kOkn",
+            "-d",
+            driver,
             "-o",
             tmp_path,
             "-m",
@@ -69,7 +77,8 @@ def test_poll(tmp_path):
     assert num_files == 1
 
 
-def test_screenshots(tmp_path):
+@pytest.mark.parametrize("driver", ["chrome", "firefox"])
+def test_screenshots(tmp_path, driver):
     """
     Simple test to try screenshots.
     """
@@ -82,6 +91,8 @@ def test_screenshots(tmp_path):
             "-m",
             ARCHIVER,
             "https://www.youtube.com/@IRyS/community",
+            "-d",
+            driver,
             "-o",
             tmp_path,
             "-m",
@@ -108,7 +119,8 @@ def test_screenshots(tmp_path):
     assert num_screenshots == to_download
 
 
-def test_screenshots_2(tmp_path):
+@pytest.mark.parametrize("driver", ["chrome", "firefox"])
+def test_screenshots_2(tmp_path, driver):
     """
     Simple test to try screenshots. This tests some known hard cases.
     """
@@ -130,6 +142,8 @@ def test_screenshots_2(tmp_path):
                 "-m",
                 ARCHIVER,
                 to_test,
+                "-d",
+                driver,
                 "-o",
                 test_tmp_path,
                 "--take-screenshots",
@@ -154,7 +168,8 @@ def test_screenshots_2(tmp_path):
         assert num_screenshots == 1
 
 
-def test_single_image(tmp_path):
+@pytest.mark.parametrize("driver", ["chrome", "firefox"])
+def test_single_image(tmp_path, driver):
     """
     Simple testing to make sure we can handle single images.
     """
@@ -165,6 +180,8 @@ def test_single_image(tmp_path):
             "-m",
             ARCHIVER,
             "https://www.youtube.com/post/UgkxqhALbEMFN0N-bjHVhp5LK4bq0RUwSOz7",
+            "-d",
+            driver,
             "-o",
             tmp_path,
             "-m",
@@ -186,7 +203,8 @@ def test_single_image(tmp_path):
     assert num_pics == 1
 
 
-def test_multi_images(tmp_path):
+@pytest.mark.parametrize("driver", ["chrome", "firefox"])
+def test_multi_images(tmp_path, driver):
     """
     Simple testing to make sure we can handle multiple images.
     """
@@ -197,6 +215,8 @@ def test_multi_images(tmp_path):
             "-m",
             ARCHIVER,
             "https://www.youtube.com/post/Ugkx3chE1Bm5UFsuMTrcpkT2L9BuMJUBQIuX",
+            "-d",
+            driver,
             "-o",
             tmp_path,
             "-m",
@@ -219,7 +239,8 @@ def test_multi_images(tmp_path):
     assert num_pics == 2
 
 
-def test_comments(tmp_path):
+@pytest.mark.parametrize("driver", ["chrome", "firefox"])
+def test_comments(tmp_path, driver):
     """
     Simple test to ensure comments work.
     """
@@ -235,6 +256,8 @@ def test_comments(tmp_path):
                 "-m",
                 ARCHIVER,
                 "https://www.youtube.com/post/UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
+                "-d",
+                driver,
                 "-o",
                 test_path,
                 "--save-comments",
