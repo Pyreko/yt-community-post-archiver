@@ -1,10 +1,11 @@
 import json
 import os
 from dataclasses import dataclass
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 import filetype
 import requests
-
 
 class PollEntry:
     def __init__(self, s: str) -> None:
@@ -28,7 +29,7 @@ class Poll:
 
 
 def get_post_id(url: str) -> str:
-    return url.split("/")[-1].split("?lb=")[-1]
+    return parse_qs(urlparse(url).query)["lb"][0]
 
 
 @dataclass
