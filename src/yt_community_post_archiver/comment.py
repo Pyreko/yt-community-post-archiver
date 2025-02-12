@@ -2,6 +2,7 @@ import json
 import os
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
@@ -29,10 +30,10 @@ class Comment:
 
     def save(self, output_dir: str, post_url: str):
         post_id = get_post_id(post_url)
-        comment_dir = os.path.join(output_dir, post_id, "comments")
-        if not os.path.exists(comment_dir):
+        comment_dir = Path(os.path.join(output_dir, post_id, "comments"))
+        if not comment_dir.exists():
             try:
-                os.mkdir(comment_dir)
+                comment_dir.mkdir(parents=True, exist_ok=True)
             except Exception as ex:
                 print(f"err: couldn't make directory for comment at {comment_dir} - {ex}")
                 return
