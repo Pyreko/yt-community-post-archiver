@@ -33,8 +33,8 @@ class Comment:
         if not os.path.exists(comment_dir):
             try:
                 os.mkdir(comment_dir)
-            except Exception:
-                print(f"err: couldn't make directory at {comment_dir}")
+            except Exception as ex:
+                print(f"err: couldn't make directory for comment at {comment_dir} - {ex}")
                 return
 
         comment_id = _get_comment_id(self.link) if self.link else "unknown"
