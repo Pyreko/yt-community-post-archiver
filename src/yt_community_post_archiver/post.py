@@ -55,7 +55,7 @@ class Post:
         post_id = get_post_id(self.url)
         dir = Path(os.path.join(output_dir, post_id))
 
-        if not dir.exists()
+        if not dir.exists():
             try:
                 dir.mkdir(parents=True, exist_ok=True)
             except Exception as ex:
