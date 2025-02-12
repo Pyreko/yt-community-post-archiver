@@ -1,10 +1,12 @@
 import json
 import os
 from dataclasses import dataclass
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
+from pathlib import Path
 
 import filetype
 import requests
-
 
 class PollEntry:
     def __init__(self, s: str) -> None:
@@ -28,7 +30,7 @@ class Poll:
 
 
 def get_post_id(url: str) -> str:
-    return url.split("/")[-1]
+    return parse_qs(urlparse(url).query)["lb"][0]
 
 
 @dataclass
@@ -51,13 +53,13 @@ class Post:
 
     def save(self, output_dir: str):
         post_id = get_post_id(self.url)
-        dir = os.path.join(output_dir, post_id)
+        dir = Path(os.path.join(output_dir, post_id))
 
-        if not os.path.exists(dir):
+        if not dir.exists():
             try:
-                os.mkdir(dir)
-            except:
-                print(f"err: couldn't make directory at {dir}")
+                dir.mkdir(parents=True, exist_ok=True)
+            except Exception as ex:
+                print(f"err: couldn't make directory for post at {dir} - {ex}")
                 return
 
         try:

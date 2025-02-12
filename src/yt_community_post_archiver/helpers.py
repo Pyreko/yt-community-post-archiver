@@ -66,7 +66,7 @@ def init_driver(
 def __is_post(candidate: WebElement) -> bool:
     href = candidate.get_attribute("href")
     if href is not None:
-        return "https://www.youtube.com/post/" in href
+        return ("community?" in href and "lb=" in href)
 
     return False
 

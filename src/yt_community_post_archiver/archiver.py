@@ -58,8 +58,7 @@ class Archiver:
 
         # Make sure the output directory exists... if not, then try and make it.
         output_dir = settings.output_dir or "archive-output"
-        if settings.output_dir is not None:
-            Path(output_dir).mkdir(parents=True, exist_ok=True)
+        Path(os.path.abspath(output_dir)).mkdir(parents=True, exist_ok=True)
 
         self.cookie_path = settings.cookie_path
         self.url = settings.url

@@ -278,8 +278,6 @@ class PostBuilder:
         post = self.post
         url = self.url
 
-        print(f"Handling `{url}`")
-
         post_link = get_post_link(post)
         if post_link is None:
             return
