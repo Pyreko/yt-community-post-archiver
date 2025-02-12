@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
+from pathlib import Path
 
 import filetype
 import requests
@@ -52,11 +53,11 @@ class Post:
 
     def save(self, output_dir: str):
         post_id = get_post_id(self.url)
-        dir = os.path.join(output_dir, post_id)
+        dir = Path(os.path.join(output_dir, post_id))
 
-        if not os.path.exists(dir):
+        if not dir.exists()
             try:
-                os.mkdir(dir)
+                dir.mkdir(parents=True, exist_ok=True)
             except Exception as ex:
                 print(f"err: couldn't make directory for post at {dir} - {ex}")
                 return
