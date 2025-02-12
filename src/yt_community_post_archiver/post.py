@@ -28,7 +28,7 @@ class Poll:
 
 
 def get_post_id(url: str) -> str:
-    return url.split("/")[-1]
+    return url.split("/")[-1].split("?lb=")[-1]
 
 
 @dataclass
@@ -56,8 +56,8 @@ class Post:
         if not os.path.exists(dir):
             try:
                 os.mkdir(dir)
-            except:
-                print(f"err: couldn't make directory at {dir}")
+            except Exception as ex:
+                print(f"err: couldn't make directory for post at {dir} - {ex}")
                 return
 
         try:
