@@ -5,7 +5,7 @@ from enum import Enum, unique
 
 from yt_community_post_archiver.helpers import Driver
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 @unique
