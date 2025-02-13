@@ -3,11 +3,13 @@
 import time
 from enum import Enum, unique
 
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium import webdriver
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.common.exceptions import MoveTargetOutOfBoundsException
 
 LOAD_SLEEP_SECS = 1
 
@@ -41,7 +43,7 @@ def init_driver(
             options.add_argument("--disable-gpu")
 
             if headless:
-                options.add_argument("--headless")
+                options.add_argument("--headless=new")
 
             if profile_dir:
                 profile_name = profile_name if profile_name is not None else "Default"
@@ -52,11 +54,13 @@ def init_driver(
             return webdriver.Chrome(options)
         case Driver.FIREFOX:
             options = webdriver.FirefoxOptions()
-            options.add_argument(f"-width={width}")
-            options.add_argument(f"-height={height}")
+            options.add_argument(f"--window-size={width},{height}")
 
             if headless:
                 options.add_argument("-headless")
+
+            if profile_dir:
+                options.set_preference("profile", f"{profile_dir}")
 
             return webdriver.Firefox(options)
         case _:
@@ -66,7 +70,7 @@ def init_driver(
 def __is_post(candidate: WebElement) -> bool:
     href = candidate.get_attribute("href")
     if href is not None:
-        return ("community?" in href and "lb=" in href)
+        return "community?" in href and "lb=" in href
 
     return False
 
@@ -104,3 +108,24 @@ def close_current_tab(driver: ChromeWebDriver | FirefoxWebDriver) -> bool:
         return True
     else:
         return False
+
+
+def scroll_to_element(
+    element: WebElement,
+    driver: ChromeWebDriver | FirefoxWebDriver,
+):
+    """
+    A wrapper to scroll to the element using ActionChains, with a fallback to using the driver to run
+    JavaScript if that fails due to MoveTargetOutOfBoundsException (common with Firefox).
+    """
+
+    try:
+        ActionChains(driver).scroll_to_element(element).perform()
+    except MoveTargetOutOfBoundsException as _e:
+        # TL;DR scrolling to element doesn't work well in FF, so we do it the old-fashioned way!
+        #
+        # See https://stackoverflow.com/questions/44777053/selenium-movetargetoutofboundsexception-with-firefox
+        # and https://www.selenium.dev/documentation/webdriver/actions_api/wheel/#scroll-to-element
+        # and https://github.com/robotframework/SeleniumLibrary/pull/1816/files
+
+        driver.execute_script("arguments[0].scrollIntoView(true);", element)

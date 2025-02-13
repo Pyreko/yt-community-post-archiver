@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 
 from PIL import Image
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
@@ -15,9 +14,11 @@ from yt_community_post_archiver.arguments import CommentType, MembersPostType
 from yt_community_post_archiver.comment import build_comment
 from yt_community_post_archiver.helpers import (
     LOAD_SLEEP_SECS,
+    Driver,
     close_current_tab,
     find_post_element,
     get_post_link,
+    scroll_to_element,
 )
 from yt_community_post_archiver.post import Poll, PollEntry, Post, get_post_id
 
@@ -164,17 +165,21 @@ class PostBuilder:
         if new_tab_post is None:
             return
 
-        action = ActionChains(self.driver)
         more = new_tab_post.find_elements(By.CLASS_NAME, "more-button")
         if more:
             # NB: DO NOT TRY AND RE-USE THE ACTIONCHAINS FROM THE ORIGINAL ARCHIVER!
             # This will cause an exception as the ActionChains becomes invalid, for
             # whatever reason, if it is used in a new tab.
+            #
+            # This isn't as relevant now since I've just resorted to creating a new action each time I scroll,
+            # but still keep this in mind!
+
             if more[0].is_displayed():
-                action.scroll_to_element(more[0]).perform()
+                scroll_to_element(more[0], self.driver)
                 more[0].click()
 
-        action.scroll_to_element(new_tab_post).perform()
+        scroll_to_element(new_tab_post, self.driver)
+
         post_id = get_post_id(self.url)
         screenshot = os.path.join(self.output_dir, post_id, "screenshot.png")
         img_bytes = new_tab_post.screenshot_as_png
@@ -211,7 +216,6 @@ class PostBuilder:
             return
 
         save_comments_types = self.save_comments_types
-        action = ActionChains(self.driver)
 
         def is_creator(comment_element: WebElement) -> bool:
             return (
@@ -257,7 +261,7 @@ class PostBuilder:
                 ):
                     return
 
-                action.scroll_to_element(comment_element).perform()
+                scroll_to_element(comment_element, self.driver)
                 seen_comments.add(link)
                 comment = build_comment(comment_element, link)
                 # print(comment.__dict__)

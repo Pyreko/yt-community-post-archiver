@@ -15,9 +15,11 @@ from yt_community_post_archiver.arguments import ArchiverSettings, get_settings
 from yt_community_post_archiver.cookies import parse_cookies
 from yt_community_post_archiver.helpers import (
     LOAD_SLEEP_SECS,
+    Driver,
     close_current_tab,
     get_post_link,
     init_driver,
+    scroll_to_element,
 )
 from yt_community_post_archiver.post import get_post_id
 from yt_community_post_archiver.post_builder import PostBuilder, get_true_comment_count
@@ -71,11 +73,6 @@ class Archiver:
         self.save_comments_types = settings.save_comments_types
         self.max_comments = settings.max_comments
 
-        # NB: DO NOT TRY AND RE-USE THE ACTIONCHAINS FOR OTHER TABS.
-        # This will cause an exception as the ActionChains becomes invalid, for
-        # whatever reason, if it is used in a new tab.
-        self.action = ActionChains(self.driver)
-
     def find_posts(self) -> list[tuple[WebElement, str]]:
         posts = []
 
@@ -88,6 +85,7 @@ class Archiver:
             if url is None or url in self.seen:
                 continue
 
+            # print((potential_post, url))
             posts.append((potential_post, url))
 
         return posts
@@ -102,8 +100,10 @@ class Archiver:
 
         while True:
             try:
-                self.action.scroll_to_element(post).perform()
+                scroll_to_element(post, self.driver)
+
                 self.seen.add(url)
+
                 post_builder = PostBuilder(
                     driver=self.driver,
                     take_screenshots=self.take_screenshots,
@@ -115,6 +115,7 @@ class Archiver:
                     max_comments=self.max_comments,
                 )
                 post_builder.process_post()
+
                 break
             except SystemExit:
                 raise SystemExit
@@ -157,7 +158,7 @@ class Archiver:
 
     def scrape(self):
         # Could use a scrollbar height check instead but idk why but that was flaky sometimes.
-        MAX_SAME_SEEN = 60
+        MAX_SAME_SEEN = 30
 
         try:
             self.driver.get(self.url)
