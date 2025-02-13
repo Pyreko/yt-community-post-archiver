@@ -118,52 +118,50 @@ def test_screenshots(tmp_path, driver):
     assert num_screenshots == to_download
 
 
-def test_screenshots_2(tmp_path, driver):
+@pytest.mark.parametrize(
+    "source",
+    [
+        # Test if a "more" button is not there.
+        "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g/community?lb=UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
+        # Test if a "more" button IS there.
+        "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g/community?lb=UgkxmfOxusAblKXyexE0_5TfO3MHoRXyqbSP",
+    ],
+)
+def test_screenshots_2(tmp_path, driver, source):
     """
     Simple test to try screenshots. This tests some known hard cases.
     """
 
-    for count, to_test in enumerate(
+    subprocess.run(
         [
-            # Test if a "more" button is not there.
-            "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g/community?lb=UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
-            # Test if a "more" button IS there.
-            "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g/community?lb=UgkxmfOxusAblKXyexE0_5TfO3MHoRXyqbSP",
-        ]
-    ):
+            "python3",
+            "-m",
+            ARCHIVER,
+            source,
+            "-d",
+            driver,
+            "-o",
+            tmp_path,
+            "--take-screenshots",
+        ],
+        cwd="src/",
+        check=True,
+    )
 
-        test_tmp_path = os.path.join(tmp_path, str(count))
+    if not os.path.isdir(tmp_path):
+        sys.exit(1)
 
-        subprocess.run(
-            [
-                "python3",
-                "-m",
-                ARCHIVER,
-                to_test,
-                "-d",
-                driver,
-                "-o",
-                test_tmp_path,
-                "--take-screenshots",
-            ],
-            cwd="src/",
-            check=True,
-        )
+    num_files = 0
+    num_screenshots = 0
+    for _, _, files in os.walk(tmp_path):
+        if "post.json" in files:
+            num_files += 1
 
-        if not os.path.isdir(test_tmp_path):
-            sys.exit(1)
+        if "screenshot.png" in files:
+            num_screenshots += 1
 
-        num_files = 0
-        num_screenshots = 0
-        for _, _, files in os.walk(test_tmp_path):
-            if "post.json" in files:
-                num_files += 1
-
-            if "screenshot.png" in files:
-                num_screenshots += 1
-
-        assert num_files == 1
-        assert num_screenshots == 1
+    assert num_files == 1
+    assert num_screenshots == 1
 
 
 def test_single_image(tmp_path, driver):

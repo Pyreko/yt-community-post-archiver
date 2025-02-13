@@ -48,7 +48,6 @@ class Archiver:
             width,
             height,
         )
-        self.driver_type = settings.driver
 
         def signal_handler(_sig_num, _frame):
             print("interrupt signal sent, halting...")
@@ -73,11 +72,6 @@ class Archiver:
         self.take_screenshots = settings.take_screenshots
         self.save_comments_types = settings.save_comments_types
         self.max_comments = settings.max_comments
-
-        # NB: DO NOT TRY AND RE-USE THE ACTIONCHAINS FOR OTHER TABS.
-        # This will cause an exception as the ActionChains becomes invalid, for
-        # whatever reason, if it is used in a new tab.
-        self.action = ActionChains(self.driver)
 
     def find_posts(self) -> list[tuple[WebElement, str]]:
         posts = []
@@ -106,13 +100,12 @@ class Archiver:
 
         while True:
             try:
-                scroll_to_element(self.driver_type, post, self.driver, self.action)
+                scroll_to_element(post, self.driver)
 
                 self.seen.add(url)
 
                 post_builder = PostBuilder(
                     driver=self.driver,
-                    driver_type=self.driver_type,
                     take_screenshots=self.take_screenshots,
                     post=post,
                     url=url,

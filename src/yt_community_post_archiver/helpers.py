@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.common.exceptions import MoveTargetOutOfBoundsException
 
 LOAD_SLEEP_SECS = 1
 
@@ -110,20 +111,21 @@ def close_current_tab(driver: ChromeWebDriver | FirefoxWebDriver) -> bool:
 
 
 def scroll_to_element(
-    driver_type: Driver,
-    post: WebElement,
+    element: WebElement,
     driver: ChromeWebDriver | FirefoxWebDriver,
-    action: ActionChains,
 ):
-    match driver_type:
-        case Driver.CHROME:
-            action.scroll_to_element(post).perform()
-        case Driver.FIREFOX:
-            # TL;DR scrolling to element doesn't work well in FF, so we do it the old-fashioned way!
-            #
-            # See https://stackoverflow.com/questions/44777053/selenium-movetargetoutofboundsexception-with-firefox
-            # and https://www.selenium.dev/documentation/webdriver/actions_api/wheel/#scroll-to-element
+    """
+    A wrapper to scroll to the element using ActionChains, with a fallback to using the driver to run
+    JavaScript if that fails due to MoveTargetOutOfBoundsException (common with Firefox).
+    """
 
-            # Apparently this scrolls things into view and seems to work, so...
-            post.location_once_scrolled_into_view
-            time.sleep(0.05)
+    try:
+        ActionChains(driver).scroll_to_element(element).perform()
+    except MoveTargetOutOfBoundsException as _e:
+        # TL;DR scrolling to element doesn't work well in FF, so we do it the old-fashioned way!
+        #
+        # See https://stackoverflow.com/questions/44777053/selenium-movetargetoutofboundsexception-with-firefox
+        # and https://www.selenium.dev/documentation/webdriver/actions_api/wheel/#scroll-to-element
+        # and https://github.com/robotframework/SeleniumLibrary/pull/1816/files
+
+        driver.execute_script("arguments[0].scrollIntoView(true);", element)
