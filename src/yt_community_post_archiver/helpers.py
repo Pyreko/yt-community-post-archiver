@@ -42,7 +42,7 @@ def init_driver(
             options.add_argument("--disable-gpu")
 
             if headless:
-                options.add_argument("--headless")
+                options.add_argument("--headless=new")
 
             if profile_dir:
                 profile_name = profile_name if profile_name is not None else "Default"
@@ -53,8 +53,7 @@ def init_driver(
             return webdriver.Chrome(options)
         case Driver.FIREFOX:
             options = webdriver.FirefoxOptions()
-            options.add_argument(f"-width={width}")
-            options.add_argument(f"-height={height}")
+            options.add_argument(f"--window-size={width},{height}")
 
             if headless:
                 options.add_argument("-headless")
