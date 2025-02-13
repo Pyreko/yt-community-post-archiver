@@ -104,9 +104,6 @@ class Archiver:
         MAX_ATTEMPTS = 5
         attempts = 0
 
-        MAX_FIREFOX_SCROLL_ATTEMPTS = 15
-        firefox_attempts = 0
-
         while True:
             try:
                 self.action.scroll_to_element(post).perform()
@@ -129,17 +126,14 @@ class Archiver:
                 match self.driver_type:
                     case Driver.CHROME:
                         attempts += 1
+
                         if attempts == MAX_ATTEMPTS:
                             raise ex
+
                         time.sleep(1)
                     case Driver.FIREFOX:
-                        firefox_attempts += 1
-
-                        if firefox_attempts == MAX_FIREFOX_SCROLL_ATTEMPTS:
-                            raise ex
-
                         # See https://stackoverflow.com/questions/44777053/selenium-movetargetoutofboundsexception-with-firefox
-                        self.driver.execute_script("window.scrollBy(0, 250);")
+                        self.driver.execute_script("window.scrollBy(0, 100);")
 
             except Exception as ex:
                 attempts += 1
