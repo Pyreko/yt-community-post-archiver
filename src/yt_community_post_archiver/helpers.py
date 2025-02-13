@@ -124,8 +124,6 @@ def scroll_to_element(
             # See https://stackoverflow.com/questions/44777053/selenium-movetargetoutofboundsexception-with-firefox
             # and https://www.selenium.dev/documentation/webdriver/actions_api/wheel/#scroll-to-element
 
-            # If this is 0, then the value is already in view.
-            scroll_amount = post.location_once_scrolled_into_view["y"]
-            if scroll_amount:
-                driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
-                time.sleep(0.05)
+            # Apparently this scrolls things into view and seems to work, so...
+            post.location_once_scrolled_into_view
+            time.sleep(0.05)
