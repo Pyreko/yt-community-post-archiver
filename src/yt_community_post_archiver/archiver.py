@@ -10,7 +10,6 @@ from pathlib import Path
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.common.exceptions import MoveTargetOutOfBoundsException
 
 from yt_community_post_archiver.arguments import ArchiverSettings, get_settings
 from yt_community_post_archiver.cookies import parse_cookies
@@ -20,6 +19,7 @@ from yt_community_post_archiver.helpers import (
     close_current_tab,
     get_post_link,
     init_driver,
+    scroll_to_element,
 )
 from yt_community_post_archiver.post import get_post_id
 from yt_community_post_archiver.post_builder import PostBuilder, get_true_comment_count
@@ -104,15 +104,15 @@ class Archiver:
         MAX_ATTEMPTS = 5
         attempts = 0
 
-        MAX_FIREFOX_SCROLL_ATTEMPTS = 30
-        firefox_attempts = 0
-
         while True:
             try:
-                self.action.scroll_to_element(post).perform()
+                scroll_to_element(self.driver_type, post, self.driver, self.action)
+
                 self.seen.add(url)
+
                 post_builder = PostBuilder(
                     driver=self.driver,
+                    driver_type=self.driver_type,
                     take_screenshots=self.take_screenshots,
                     post=post,
                     url=url,
@@ -122,25 +122,10 @@ class Archiver:
                     max_comments=self.max_comments,
                 )
                 post_builder.process_post()
+
                 break
             except SystemExit:
                 raise SystemExit
-            except MoveTargetOutOfBoundsException as ex:
-                match self.driver_type:
-                    case Driver.CHROME:
-                        attempts += 1
-                        if attempts == MAX_ATTEMPTS:
-                            raise ex
-                        time.sleep(1)
-                    case Driver.FIREFOX:
-                        firefox_attempts += 1
-
-                        if firefox_attempts == MAX_FIREFOX_SCROLL_ATTEMPTS:
-                            raise ex
-
-                        # See https://stackoverflow.com/questions/44777053/selenium-movetargetoutofboundsexception-with-firefox
-                        self.driver.execute_script("window.scrollBy(0, 300);")
-
             except Exception as ex:
                 attempts += 1
 

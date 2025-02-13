@@ -6,8 +6,9 @@ import pytest
 
 ARCHIVER = "yt_community_post_archiver"
 
+pytestmark = pytest.mark.parametrize("driver", ["chrome", "firefox"])
 
-@pytest.mark.parametrize("driver", ["chrome", "firefox"])
+
 def test_basic_works(tmp_path, driver):
     """
     Simple testing to make sure we can download a few files. This does not verify validity or anything.
@@ -43,7 +44,6 @@ def test_basic_works(tmp_path, driver):
     assert num_files == to_download
 
 
-@pytest.mark.parametrize("driver", ["chrome", "firefox"])
 def test_poll(tmp_path, driver):
     """
     Simple testing to make sure we can download a poll. This does not verify validity or anything.
@@ -77,7 +77,6 @@ def test_poll(tmp_path, driver):
     assert num_files == 1
 
 
-@pytest.mark.parametrize("driver", ["chrome", "firefox"])
 def test_screenshots(tmp_path, driver):
     """
     Simple test to try screenshots.
@@ -119,7 +118,6 @@ def test_screenshots(tmp_path, driver):
     assert num_screenshots == to_download
 
 
-@pytest.mark.parametrize("driver", ["chrome", "firefox"])
 def test_screenshots_2(tmp_path, driver):
     """
     Simple test to try screenshots. This tests some known hard cases.
@@ -168,7 +166,6 @@ def test_screenshots_2(tmp_path, driver):
         assert num_screenshots == 1
 
 
-@pytest.mark.parametrize("driver", ["chrome", "firefox"])
 def test_single_image(tmp_path, driver):
     """
     Simple testing to make sure we can handle single images.
@@ -203,7 +200,6 @@ def test_single_image(tmp_path, driver):
     assert num_pics == 1
 
 
-@pytest.mark.parametrize("driver", ["chrome", "firefox"])
 def test_multi_images(tmp_path, driver):
     """
     Simple testing to make sure we can handle multiple images.
@@ -239,50 +235,49 @@ def test_multi_images(tmp_path, driver):
     assert num_pics == 2
 
 
-@pytest.mark.parametrize("driver", ["chrome", "firefox"])
-def test_comments(tmp_path, driver):
+# Ideally, test all of ["all", "hearted", "pinned", "creator", "members"],
+# but this is a bit hard with posts so...
+@pytest.mark.parametrize("comment_type", ["all", "members"])
+def test_comments(tmp_path, driver, comment_type):
     """
     Simple test to ensure comments work.
     """
 
-    # ideally test all of ["all", "hearted", "pinned", "creator", "members"]
-    # however this is a bit hard with posts
-    for comment_type in ["all", "members"]:
-        test_path = os.path.join(tmp_path, comment_type)
+    test_path = os.path.join(tmp_path, comment_type)
 
-        subprocess.run(
-            [
-                "python3",
-                "-m",
-                ARCHIVER,
-                "https://www.youtube.com/post/UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
-                "-d",
-                driver,
-                "-o",
-                test_path,
-                "--save-comments",
-                comment_type,
-                "--max-comments",
-                "5",
-            ],
-            cwd="src/",
-            check=True,
-        )
+    subprocess.run(
+        [
+            "python3",
+            "-m",
+            ARCHIVER,
+            "https://www.youtube.com/post/UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
+            "-d",
+            driver,
+            "-o",
+            test_path,
+            "--save-comments",
+            comment_type,
+            "--max-comments",
+            "5",
+        ],
+        cwd="src/",
+        check=True,
+    )
 
-        if not os.path.isdir(test_path):
-            sys.exit(1)
+    if not os.path.isdir(test_path):
+        sys.exit(1)
 
-        num_files = 0
-        num_comments = 0
+    num_files = 0
+    num_comments = 0
 
-        for _, _, files in os.walk(test_path):
-            if "post.json" in files:
-                num_files += 1
+    for _, _, files in os.walk(test_path):
+        if "post.json" in files:
+            num_files += 1
 
-        for root, _, files in os.walk(test_path):
-            if root.endswith("comments"):
-                num_comments = len(files)
-                break
+    for root, _, files in os.walk(test_path):
+        if root.endswith("comments"):
+            num_comments = len(files)
+            break
 
-        assert num_files == 1
-        assert num_comments == 5
+    assert num_files == 1
+    assert num_comments == 5

@@ -15,9 +15,11 @@ from yt_community_post_archiver.arguments import CommentType, MembersPostType
 from yt_community_post_archiver.comment import build_comment
 from yt_community_post_archiver.helpers import (
     LOAD_SLEEP_SECS,
+    Driver,
     close_current_tab,
     find_post_element,
     get_post_link,
+    scroll_to_element,
 )
 from yt_community_post_archiver.post import Poll, PollEntry, Post, get_post_id
 
@@ -145,6 +147,7 @@ def _get_poll(
 @dataclass
 class PostBuilder:
     driver: ChromeWebDriver | FirefoxWebDriver
+    driver_type: Driver
     post: WebElement
     url: str
     take_screenshots: bool
@@ -171,10 +174,11 @@ class PostBuilder:
             # This will cause an exception as the ActionChains becomes invalid, for
             # whatever reason, if it is used in a new tab.
             if more[0].is_displayed():
-                action.scroll_to_element(more[0]).perform()
+                scroll_to_element(self.driver_type, more[0], self.driver, action)
                 more[0].click()
 
-        action.scroll_to_element(new_tab_post).perform()
+        scroll_to_element(self.driver_type, new_tab_post, self.driver, action)
+
         post_id = get_post_id(self.url)
         screenshot = os.path.join(self.output_dir, post_id, "screenshot.png")
         img_bytes = new_tab_post.screenshot_as_png
@@ -257,7 +261,9 @@ class PostBuilder:
                 ):
                     return
 
-                action.scroll_to_element(comment_element).perform()
+                scroll_to_element(
+                    self.driver_type, comment_element, self.driver, action
+                )
                 seen_comments.add(link)
                 comment = build_comment(comment_element, link)
                 # print(comment.__dict__)

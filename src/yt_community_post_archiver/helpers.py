@@ -1,9 +1,9 @@
 # A series of helper functions to avoid cluttering the main archiver code file.
 
-import os
 import time
 from enum import Enum, unique
 
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium import webdriver
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.common.by import By
@@ -107,3 +107,25 @@ def close_current_tab(driver: ChromeWebDriver | FirefoxWebDriver) -> bool:
         return True
     else:
         return False
+
+
+def scroll_to_element(
+    driver_type: Driver,
+    post: WebElement,
+    driver: ChromeWebDriver | FirefoxWebDriver,
+    action: ActionChains,
+):
+    match driver_type:
+        case Driver.CHROME:
+            action.scroll_to_element(post).perform()
+        case Driver.FIREFOX:
+            # TL;DR scrolling to element doesn't work well in FF, so we do it the old-fashioned way!
+            #
+            # See https://stackoverflow.com/questions/44777053/selenium-movetargetoutofboundsexception-with-firefox
+            # and https://www.selenium.dev/documentation/webdriver/actions_api/wheel/#scroll-to-element
+
+            # If this is 0, then the value is already in view.
+            scroll_amount = post.location_once_scrolled_into_view["y"]
+            if scroll_amount:
+                driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
+                time.sleep(0.05)
