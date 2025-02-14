@@ -65,6 +65,7 @@ class ArchiverSettings:
     max_posts: int | None
     profile_dir: str | None
     profile_name: str | None
+    binary_override: str | None
     driver: Driver
     save_comments_types: set[CommentType]
     max_comments: int | None
@@ -127,6 +128,12 @@ def _create_parser() -> argparse.ArgumentParser:
         default="chrome",
         help="Specify which browser driver to use.",
         choices=["firefox", "chrome"],
+    )
+    parser.add_argument(
+        "--binary-override",
+        type=str,
+        required=False,
+        help="Override the default driver binary. You probably don't need this unless you want to scrape using developer/canary/beta versions.",
     )
     parser.add_argument(
         "--members",
@@ -201,6 +208,7 @@ def get_settings() -> tuple[ArchiverSettings, int]:
             members=MembersPostType.from_str(args.members) if args.members else None,
             profile_dir=args.profile_dir,
             profile_name=args.profile_name,
+            binary_override=args.binary_override,
             save_comments_types=(
                 set([CommentType.from_str(ty) for ty in args.save_comments])
                 if args.save_comments

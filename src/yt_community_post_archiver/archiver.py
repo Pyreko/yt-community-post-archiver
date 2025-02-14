@@ -45,6 +45,7 @@ class Archiver:
             settings.headless,
             settings.profile_dir,
             settings.profile_name,
+            settings.binary_override,
             width,
             height,
         )

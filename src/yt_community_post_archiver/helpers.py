@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import MoveTargetOutOfBoundsException
 
@@ -29,6 +30,7 @@ def init_driver(
     headless: bool,
     profile_dir: str | None,
     profile_name: str | None,
+    binary_override: str | None,
     width: int,
     height: int,
 ) -> ChromeWebDriver | FirefoxWebDriver:
@@ -51,6 +53,9 @@ def init_driver(
                 options.add_argument(f"--user-data-dir={profile_dir}")
                 options.add_argument(f"--profile-directory={profile_name}")
 
+            if binary_override:
+                options.binary_location = binary_override
+
             return webdriver.Chrome(options)
         case Driver.FIREFOX:
             options = webdriver.FirefoxOptions()
@@ -60,7 +65,11 @@ def init_driver(
                 options.add_argument("-headless")
 
             if profile_dir:
-                options.set_preference("profile", f"{profile_dir}")
+                ff_profile = FirefoxProfile(profile_directory=profile_dir)
+                options.profile = ff_profile
+
+            if binary_override:
+                options.binary_location = binary_override
 
             return webdriver.Firefox(options)
         case _:
