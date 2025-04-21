@@ -176,7 +176,7 @@ Another method is if you have a Netscape-format cookies file, which you can pass
 yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/community" -c "/home/me/my_cookies_file.txt"
 ```
 
-Note that I've personally found this much flakier and occasionally fails in certain situations. It should
+**Note that I've personally found this much flakier and occasionally fails in certain situations.** It should
 work fine if you just want to get a few posts though, and already have a cookie file for things like
 `ytarchive`.
 

@@ -7,7 +7,6 @@ import time
 import traceback
 from pathlib import Path
 
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
@@ -73,6 +72,7 @@ class Archiver:
         self.take_screenshots = settings.take_screenshots
         self.save_comments_types = settings.save_comments_types
         self.max_comments = settings.max_comments
+        self.original_handle = None
 
     def find_posts(self) -> list[tuple[WebElement, str]]:
         posts = []
@@ -86,7 +86,7 @@ class Archiver:
             if url is None or url in self.seen:
                 continue
 
-            # print((potential_post, url))
+            # print(f"potential post - {(potential_post, url)}")
             posts.append((potential_post, url))
 
         return posts
@@ -114,6 +114,7 @@ class Archiver:
                     members=self.members,
                     save_comments_types=self.save_comments_types,
                     max_comments=self.max_comments,
+                    original_handle=self.original_handle,
                 )
                 post_builder.process_post()
 
@@ -145,7 +146,7 @@ class Archiver:
                 # Check the current URL isn't a post. If it is, try closing the current tab;
                 # if no tab is left, the root URL was a post, so halt.
                 if get_true_comment_count(self.driver) is not None:
-                    if not close_current_tab(self.driver):
+                    if not close_current_tab(self.driver, self.original_handle):
                         return False
 
                 self.driver.execute_script("window.scrollBy(0, 500);")
@@ -163,6 +164,7 @@ class Archiver:
 
         try:
             self.driver.get(self.url)
+            self.original_handle = self.driver.current_window_handle
 
             # Validate that the cookies path is valid if set, then set cookies.
             if self.cookie_path is not None:
@@ -192,6 +194,8 @@ class Archiver:
                     if self.at_max_posts():
                         print(f"Hit maximum posts ({self.max_posts}). Halting.")
                         return
+
+                    self.driver.switch_to.window(self.original_handle)
 
                     if not self.should_skip_post(url) and url not in self.seen:
                         self.handle_post(post, url)

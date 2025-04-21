@@ -153,6 +153,7 @@ class PostBuilder:
     members: MembersPostType | None
     save_comments_types: set[CommentType]
     max_comments: int | None
+    original_handle: str | None
 
     def __open_post_in_tab(self, url: str) -> WebElement | None:
         self.driver.switch_to.new_window("tab")
@@ -344,4 +345,4 @@ class PostBuilder:
             self.__get_comments()
 
         if opened_tab and opened_post is not None:
-            close_current_tab(self.driver)
+            close_current_tab(self.driver, self.original_handle)

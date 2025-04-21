@@ -5,7 +5,7 @@ from enum import Enum, unique
 
 from yt_community_post_archiver.helpers import Driver
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 
 @unique
@@ -87,7 +87,7 @@ def _create_parser() -> argparse.ArgumentParser:
         "--profile-dir",
         type=str,
         required=False,
-        help="The path to where your ddriver profiles are stored. Will not do anything if cookies are set.",
+        help="The path to where your driver profiles are stored (e.g. ~/.config/chromium). Will not do anything if cookies are set.",
     )
     parser.add_argument(
         "-n",

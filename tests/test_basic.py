@@ -279,3 +279,46 @@ def test_comments(tmp_path, driver, comment_type):
 
     assert num_files == 1
     assert num_comments == 5
+
+
+def test_tab_open_and_close(tmp_path, driver):
+    """
+    Simple testing to make sure tab opening and closing aren't broken (after a user report of this happening).
+    NOTE: I could only replicate this with a profile enabled, which isn't possible here.
+
+    This does not verify validity or anything.
+    """
+
+    to_download = 5
+
+    subprocess.run(
+        [
+            "python3",
+            "-m",
+            ARCHIVER,
+            "https://www.youtube.com/@IRyS/community",
+            "-d",
+            driver,
+            "-o",
+            tmp_path,
+            "-m",
+            str(to_download),
+            "--take-screenshots",
+            "--save-comments",
+            "all",
+            "--max-comments",
+            "5",
+        ],
+        cwd="src/",
+        check=True,
+    )
+
+    if not os.path.isdir(tmp_path):
+        sys.exit(1)
+
+    num_files = 0
+    for _, _, files in os.walk(tmp_path):
+        if "post.json" in files:
+            num_files += 1
+
+    assert num_files == to_download
