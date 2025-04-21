@@ -284,7 +284,8 @@ def test_comments(tmp_path, driver, comment_type):
 def test_tab_open_and_close(tmp_path, driver):
     """
     Simple testing to make sure tab opening and closing aren't broken (after a user report of this happening).
-    NOTE: I could only replicate this with a profile enabled, which isn't possible here.
+    NOTE: I could only replicate this with a profile enabled, which isn't possible here (or well it is but I'm
+    too lazy to make that work sorry).
 
     This does not verify validity or anything.
     """
