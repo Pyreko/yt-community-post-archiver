@@ -3,14 +3,17 @@
 import time
 from enum import Enum, unique
 
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium import webdriver
+from selenium.common.exceptions import (
+    MoveTargetOutOfBoundsException,
+    NoSuchElementException,
+)
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.common.exceptions import MoveTargetOutOfBoundsException
 
 LOAD_SLEEP_SECS = 1
 
@@ -104,7 +107,9 @@ def find_post_element(driver: ChromeWebDriver | FirefoxWebDriver) -> WebElement 
     return post
 
 
-def close_current_tab(driver: ChromeWebDriver | FirefoxWebDriver) -> bool:
+def close_current_tab(
+    driver: ChromeWebDriver | FirefoxWebDriver, original_handle: str | None
+) -> bool:
     """
     Try to close the current tab. Return True if there is still a tab after, and False if there
     is no tabs after.
@@ -112,7 +117,8 @@ def close_current_tab(driver: ChromeWebDriver | FirefoxWebDriver) -> bool:
 
     if len(driver.window_handles) > 1:
         driver.close()
-        driver.switch_to.window(driver.window_handles[0])
+        if original_handle is not None:
+            driver.switch_to.window(original_handle)
         time.sleep(0.5)
         return True
     else:
@@ -138,3 +144,6 @@ def scroll_to_element(
         # and https://github.com/robotframework/SeleniumLibrary/pull/1816/files
 
         driver.execute_script("arguments[0].scrollIntoView(true);", element)
+    except NoSuchElementException as e:
+        print(f"err: couldn't scroll to element {element}")
+        raise e
