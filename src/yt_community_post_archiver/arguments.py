@@ -20,6 +20,7 @@ class CommentType(Enum):
     CREATOR = 4
     MEMBERS = 5
 
+    @staticmethod
     def from_str(s: str):
         match s:
             case "all":
@@ -45,6 +46,7 @@ class MembersPostType(Enum):
     MEMBERS_ONLY = 1
     NO_MEMBERS = 2
 
+    @staticmethod
     def from_str(s: str):
         match s:
             case "members-only":
@@ -212,7 +214,7 @@ def get_settings() -> tuple[ArchiverSettings, int]:
             save_comments_types=(
                 set([CommentType.from_str(ty) for ty in args.save_comments])
                 if args.save_comments
-                else []
+                else set()
             ),
             max_comments=args.max_comments,
             take_screenshots=args.take_screenshots,
