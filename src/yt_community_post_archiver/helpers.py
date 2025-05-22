@@ -68,8 +68,13 @@ def init_driver(
                 options.add_argument("-headless")
 
             if profile_dir:
-                ff_profile = FirefoxProfile(profile_directory=profile_dir)
-                options.profile = ff_profile
+                options.add_argument("-profile")
+                options.add_argument(profile_dir)
+
+                # This doesn't work for some reason on at least Windows, it causes a weird
+                # hang with encoding or something.
+                # ff_profile = FirefoxProfile(profile_directory=profile_dir)
+                # options.profile = ff_profile
 
             if binary_override:
                 options.binary_location = binary_override
