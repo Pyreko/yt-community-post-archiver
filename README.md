@@ -115,7 +115,7 @@ yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "output/
 
 This runs the archiver, directed to `https://www.youtube.com/@IRyS/community`, saving to `output/testing`, and gets
 a maximum of one post. If you are running from the repo, then replace `yt-community-post-archiver` with
-`hatch run yt-community-post-archiver`. 
+`hatch run yt-community-post-archiver`.
 
 At the time of writing, this gives me two files that look like this - `post.json`:
 
@@ -166,7 +166,8 @@ profiles are located (for example, in Chrome, you can find this with `chrome://v
 yt-community-post-archiver -o output/ -p ~/.config/chromium/  "https://www.youtube.com/@WatsonAmelia/membership"
 ```
 
-By default this will use the default profile name; if you need to override this then use `-n` as well.
+By default this will use the default profile name; if you need to override this then use `-n` as well. **I highly recommend
+creating a new profile for using this tool (whether it's Chrome or Firefox) just so it doesn't accidentally delete some tabs or something**.
 
 ##### Use cookies file
 
