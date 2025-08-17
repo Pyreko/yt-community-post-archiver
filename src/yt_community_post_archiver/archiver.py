@@ -101,6 +101,7 @@ class Archiver:
 
         while True:
             try:
+                print(f"is {url} visible? {post.is_displayed()}")
                 scroll_to_element(post, self.driver)
 
                 self.seen.add(url)
