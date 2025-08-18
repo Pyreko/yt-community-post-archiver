@@ -30,10 +30,10 @@ jobs:
 
       - name: Install Hatch
         # See https://github.com/pypa/hatch/issues/1623
-        run: ${{ steps.setup.outputs.python-path }}/pip install hatch@1.13.0
+        run: $pythonLocation/bin/pip install hatch@1.13.0
 
       - name: Install pytest
-        run: ${{ steps.setup.outputs.python-path }}/pip install pytest
+        run: $pythonLocation/bin/pip install pytest
 
       - name: Run tests
         run: hatch test
@@ -42,10 +42,8 @@ jobs:
 
       - name: Test building
         run: hatch build -t wheel
-        env:
-          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
 
       - name: Test running the binary
         run: |
-          pip install dist/*.whl
+          $pythonLocation/bin/pip install dist/*.whl
           yt-community-post-archiver -h
