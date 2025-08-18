@@ -29,7 +29,7 @@ def test_basic_works(tmp_path, driver: str, profile: str):
         "python3",
         "-m",
         ARCHIVER,
-        "https://www.youtube.com/@IRyS/community",
+        "https://www.youtube.com/@IRyS/posts",
         "-d",
         driver,
         "-o",
@@ -107,7 +107,7 @@ def test_screenshots(tmp_path, driver: str, profile: str):
         "python3",
         "-m",
         ARCHIVER,
-        "https://www.youtube.com/@IRyS/community",
+        "https://www.youtube.com/@IRyS/posts",
         "-d",
         driver,
         "-o",
@@ -146,9 +146,9 @@ def test_screenshots(tmp_path, driver: str, profile: str):
     "source",
     [
         # Test if a "more" button is not there.
-        "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g/community?lb=UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
+        "https://www.youtube.com/post/UgkxuIldX2ZZVVkHmMwkat9iD1idsNbBvpel",
         # Test if a "more" button IS there.
-        "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g/community?lb=UgkxmfOxusAblKXyexE0_5TfO3MHoRXyqbSP",
+        "https://www.youtube.com/post/UgkxmfOxusAblKXyexE0_5TfO3MHoRXyqbSP",
     ],
 )
 def test_screenshots_2(tmp_path, driver: str, profile: str, source: str):
@@ -340,7 +340,7 @@ def test_tab_open_and_close(tmp_path, driver: str, profile: str):
         "python3",
         "-m",
         ARCHIVER,
-        "https://www.youtube.com/@IRyS/community",
+        "https://www.youtube.com/@IRyS/posts",
         "-d",
         driver,
         "-o",

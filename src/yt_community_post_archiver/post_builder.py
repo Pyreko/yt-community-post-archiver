@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
+from typing_extensions import TypeIs
 
 from yt_community_post_archiver.arguments import CommentType, MembersPostType
 from yt_community_post_archiver.comment import build_comment
@@ -30,6 +31,10 @@ def _is_members_post(post: WebElement) -> bool:
 def get_true_comment_count(
     driver: ChromeWebDriver | FirefoxWebDriver,
 ) -> str | None:
+    """
+    Get the number of comments. This should always be a valid int.
+    """
+
     comment_elements = driver.find_elements(By.TAG_NAME, "ytd-comments")
     if comment_elements:
         count = comment_elements[0].find_elements(By.ID, "count")
@@ -39,17 +44,28 @@ def get_true_comment_count(
     return None
 
 
-def _get_likes(post: WebElement) -> int | None:
+def _get_likes(post: WebElement) -> str | None:
+    """
+    Get the number of comments. These return string as the values may be represented by strings like "2.5K".
+    """
+
     thumbs_elements = post.find_elements(By.ID, "vote-count-middle")
-    return thumbs_elements[0].text if thumbs_elements else None
+    try:
+        return thumbs_elements[0].text if thumbs_elements else None
+    except ValueError:
+        return None
 
 
 def _get_links(post: WebElement) -> list[str]:
     # Filter out the first link as it will always be the channel. Also filter out any accounts.google.com links.
+
+    def link_filter(link: str | None) -> TypeIs[str]:
+        return link is not None and ("accounts.google.com" not in link)
+
     return list(
         dict.fromkeys(
             filter(
-                lambda link: link is not None and ("accounts.google.com" not in link),
+                link_filter,
                 (
                     link.get_attribute("href")
                     for link in post.find_elements(By.TAG_NAME, "a")
@@ -64,7 +80,8 @@ def _get_images(post: WebElement) -> list[str]:
     # until it disappears, at which point all images should be loaded.
     img_buttons = post.find_elements(By.ID, "right-arrow")
     for img_button in img_buttons:
-        if "ytd-post-multi-image-renderer" in img_button.get_attribute("class"):
+        classes = img_button.get_attribute("class")
+        if classes and "ytd-post-multi-image-renderer" in classes:
             while img_button.is_displayed():
                 img_button.click()
 
@@ -72,7 +89,7 @@ def _get_images(post: WebElement) -> list[str]:
         # Basically replace s640 or whatever with a bigger value. 3840 seems to be ok.
         url.split("=")[0] + "=s3840"
         for url in filter(
-            lambda img: img is not None,
+            None,
             (
                 img.get_attribute("src")
                 for img in post.find_elements(By.TAG_NAME, "img")
@@ -81,19 +98,27 @@ def _get_images(post: WebElement) -> list[str]:
     ]
 
 
-def _get_approximate_num_comments(post: WebElement) -> int | None:
+def _get_approximate_num_comments(post: WebElement) -> str | None:
+    """
+    Get the number of comments. These return string as the values may be represented by strings like "2.5K".
+    """
+
     comment_elements = post.find_elements(By.ID, "reply-button-end")
-    return (
-        comment_elements[0].text.strip().split("\n")[0].strip()
-        if comment_elements
-        else None
-    )
+
+    try:
+        return (
+            comment_elements[0].text.strip().split("\n")[0].strip()
+            if comment_elements
+            else None
+        )
+    except ValueError:
+        return None
 
 
 def _get_text(post: WebElement) -> str:
     text_elements = post.find_elements(By.ID, "content")
     if not text_elements:
-        return
+        return ""
     return text_elements[0].get_attribute("innerText") or ""
 
 
@@ -109,7 +134,7 @@ def _get_poll(
                 percentage = p.find_elements(By.CLASS_NAME, "vote-percentage")
                 if len(percentage) > 0:
                     percentage_text = percentage[0].get_attribute("innerText")
-                    if len(percentage_text) == 0:
+                    if percentage_text and len(percentage_text) == 0:
                         # Try and click on the entry.
                         poll_reclick = p
                         p.click()
@@ -121,7 +146,7 @@ def _get_poll(
             poll_entries = [
                 PollEntry(p)
                 for p in filter(
-                    lambda p: p is not None,
+                    None,
                     (p.get_attribute("innerText") for p in poll_elements),
                 )
             ]
@@ -153,7 +178,7 @@ class PostBuilder:
     members: MembersPostType | None
     save_comments_types: set[CommentType]
     max_comments: int | None
-    original_handle: str | None
+    original_handle: str
 
     def __open_post_in_tab(self, url: str) -> WebElement | None:
         self.driver.switch_to.new_window("tab")
@@ -182,6 +207,11 @@ class PostBuilder:
         scroll_to_element(new_tab_post, self.driver)
 
         post_id = get_post_id(self.url)
+
+        if post_id is None:
+            print(f"err: could not parse post ID from `{self.url}`")
+            return
+
         screenshot = os.path.join(self.output_dir, post_id, "screenshot.png")
         img_bytes = new_tab_post.screenshot_as_png
         img = Image.open(io.BytesIO(img_bytes))
@@ -219,27 +249,23 @@ class PostBuilder:
         save_comments_types = self.save_comments_types
 
         def is_creator(comment_element: WebElement) -> bool:
-            return (
-                CommentType.CREATOR in save_comments_types
-                and comment_element.find_elements(By.ID, "author-comment-badge")
+            return CommentType.CREATOR in save_comments_types and bool(
+                comment_element.find_elements(By.ID, "author-comment-badge")
             )
 
         def is_hearted(comment_element: WebElement) -> bool:
-            return (
-                CommentType.HEARTED in save_comments_types
-                and comment_element.find_elements(By.ID, "creator-heart-button")
+            return CommentType.HEARTED in save_comments_types and bool(
+                comment_element.find_elements(By.ID, "creator-heart-button")
             )
 
         def is_pinned(comment_element: WebElement) -> bool:
-            return (
-                CommentType.PINNED in save_comments_types
-                and comment_element.find_elements(By.ID, "pinned-comment-badge")
+            return CommentType.PINNED in save_comments_types and bool(
+                comment_element.find_elements(By.ID, "pinned-comment-badge")
             )
 
         def is_members(comment_element: WebElement) -> bool:
-            return (
-                CommentType.MEMBERS in save_comments_types
-                and comment_element.find_elements(By.ID, "custom-badge")
+            return CommentType.MEMBERS in save_comments_types and bool(
+                comment_element.find_elements(By.ID, "custom-badge")
             )
 
         comments_saved = 0

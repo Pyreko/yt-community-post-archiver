@@ -87,7 +87,7 @@ def init_driver(
 def __is_post(candidate: WebElement) -> bool:
     href = candidate.get_attribute("href")
     if href is not None:
-        return "community?" in href and "lb=" in href
+        return "post/" in href
 
     return False
 
@@ -113,21 +113,20 @@ def find_post_element(driver: ChromeWebDriver | FirefoxWebDriver) -> WebElement 
 
 
 def close_current_tab(
-    driver: ChromeWebDriver | FirefoxWebDriver, original_handle: str | None
-) -> bool:
+    driver: ChromeWebDriver | FirefoxWebDriver, original_handle: str
+) -> int:
     """
-    Try to close the current tab. Return True if there is still a tab after, and False if there
-    is no tabs after.
+    Try to close the current tab if there was more than one tab left. Returns the number of tabs left before closing.
     """
 
-    if len(driver.window_handles) > 1:
+    original_tabs_left = len(driver.window_handles)
+
+    if original_tabs_left > 1:
         driver.close()
-        if original_handle is not None:
-            driver.switch_to.window(original_handle)
+        driver.switch_to.window(original_handle)
         time.sleep(0.5)
-        return True
-    else:
-        return False
+
+    return original_tabs_left
 
 
 def scroll_to_element(

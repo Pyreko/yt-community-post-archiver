@@ -10,6 +10,9 @@ on:
   schedule:
     - cron: "0 0 * * 1"
 
+env:
+  HATCH_VERSION: "1.13.0"
+
 jobs:
   test:
     strategy:
@@ -22,18 +25,18 @@ jobs:
         uses: actions/checkout@v4.1.1
 
       - name: Set up Python
+        id: setup
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
 
       - name: Install Hatch
-        uses: pypa/hatch@install
-        with:
-          version: 1.13.0
+        # See https://github.com/pypa/hatch/issues/1623
+        run: $pythonLocation/bin/pip install hatch==$HATCH_VERSION
 
       - name: Install pytest
-        run: pip install pytest
+        run: $pythonLocation/bin/pip install pytest
 
       - name: Run tests
         run: hatch test
@@ -45,5 +48,5 @@ jobs:
 
       - name: Test running the binary
         run: |
-          pip install dist/*.whl
+          $pythonLocation/bin/pip install dist/*.whl
           yt-community-post-archiver -h
