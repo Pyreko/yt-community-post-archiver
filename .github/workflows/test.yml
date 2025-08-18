@@ -29,25 +29,16 @@ jobs:
           cache: "pip"
 
       - name: Install Hatch
-        uses: pypa/hatch@install
-        env:
-          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
-        with:
-          version: 1.13.0
-
-      - name: Fix hatch
-        run: hatch env prune
-        env:
-          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
+        # See https://github.com/pypa/hatch/issues/1623
+        run: ${{ steps.setup.outputs.python-path }}/pip install hatch@1.13.0
 
       - name: Install pytest
-        run: pip install pytest
+        run: ${{ steps.setup.outputs.python-path }}/pip install pytest
 
       - name: Run tests
         run: hatch test
         env:
           TEST_PROFILES: true
-          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
 
       - name: Test building
         run: hatch build -t wheel
