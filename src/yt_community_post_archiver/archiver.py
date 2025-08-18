@@ -233,6 +233,11 @@ class Archiver:
             return False
 
         post_id = get_post_id(url)
+
+        if post_id is None:
+            print(f"err: could not parse post ID from `{url}`")
+            return True
+
         post_output_dir = os.path.join(self.output_dir, post_id)
 
         return Path(post_output_dir).exists()

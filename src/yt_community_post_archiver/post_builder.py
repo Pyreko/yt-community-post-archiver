@@ -30,7 +30,7 @@ def _is_members_post(post: WebElement) -> bool:
 
 def get_true_comment_count(
     driver: ChromeWebDriver | FirefoxWebDriver,
-) -> int | None:
+) -> str | None:
     """
     Get the number of comments. This should always be a valid int.
     """
@@ -39,7 +39,7 @@ def get_true_comment_count(
     if comment_elements:
         count = comment_elements[0].find_elements(By.ID, "count")
         if count:
-            return int(count[0].text.split()[0])
+            return count[0].text.split()[0]
 
     return None
 
@@ -207,6 +207,11 @@ class PostBuilder:
         scroll_to_element(new_tab_post, self.driver)
 
         post_id = get_post_id(self.url)
+
+        if post_id is None:
+            print(f"err: could not parse post ID from `{self.url}`")
+            return
+
         screenshot = os.path.join(self.output_dir, post_id, "screenshot.png")
         img_bytes = new_tab_post.screenshot_as_png
         img = Image.open(io.BytesIO(img_bytes))

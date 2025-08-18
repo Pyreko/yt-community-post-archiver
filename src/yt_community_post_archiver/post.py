@@ -61,7 +61,7 @@ class Post:
     is_members: bool
     relative_date: str
     approximate_num_comments: str | None
-    num_comments: int | None
+    num_comments: str | None
     num_thumbs_up: str | None
     poll: Poll | None
     when_archived: str
