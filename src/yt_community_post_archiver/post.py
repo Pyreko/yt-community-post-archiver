@@ -2,7 +2,7 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 import filetype
 import requests
@@ -29,8 +29,23 @@ class Poll:
     total_votes: str | None
 
 
-def get_post_id(url: str) -> str:
-    return parse_qs(urlparse(url).query)["lb"][0]
+def get_post_id(url: str) -> str | None:
+    """
+    Get the post ID from a YouTube community post URL.
+    """
+
+    path = urlparse(url).path
+    splits = list(path.split("/"))
+
+    try:
+        post_prefix_index = splits.index("post")
+
+        if len(splits) > post_prefix_index + 1:
+            return splits[post_prefix_index + 1]
+
+        return None
+    except ValueError:
+        return None
 
 
 @dataclass
@@ -53,6 +68,10 @@ class Post:
 
     def save(self, output_dir: str):
         post_id = get_post_id(self.url)
+        if post_id is None:
+            print(f"err: could not parse post ID from `{self.url}`")
+            return
+
         dir = Path(os.path.join(output_dir, post_id))
 
         if not dir.exists():

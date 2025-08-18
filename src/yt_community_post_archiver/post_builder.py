@@ -357,6 +357,8 @@ class PostBuilder:
             when_archived=str(datetime.now(tz=UTC)),
         )
 
+        post.save(self.output_dir)
+
         if self.take_screenshots:
             self.__take_screenshots(opened_post)
 
