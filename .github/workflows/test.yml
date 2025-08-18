@@ -10,6 +10,9 @@ on:
   schedule:
     - cron: "0 0 * * 1"
 
+env:
+  HATCH_VERSION: "1.13.0"
+
 jobs:
   test:
     strategy:
@@ -30,7 +33,7 @@ jobs:
 
       - name: Install Hatch
         # See https://github.com/pypa/hatch/issues/1623
-        run: $pythonLocation/bin/pip install hatch==1.13.0
+        run: $pythonLocation/bin/pip install hatch==$HATCH_VERSION
 
       - name: Install pytest
         run: $pythonLocation/bin/pip install pytest

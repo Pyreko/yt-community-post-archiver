@@ -10,6 +10,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.12"
+  HATCH_VERSION: "1.13.0"
 
 jobs:
   build:
@@ -29,14 +30,11 @@ jobs:
           cache: "pip"
 
       - name: Install Hatch
-        uses: pypa/hatch@install
-        with:
-          version: 1.13.0
+        # See https://github.com/pypa/hatch/issues/1623
+        run: $pythonLocation/bin/pip install hatch==$HATCH_VERSION
 
       - name: Build wheel
         run: hatch build -t wheel
-        env:
-          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
 
       - name: Create release
         uses: softprops/action-gh-release@v2.0.9
@@ -83,16 +81,11 @@ jobs:
           cache: "pip"
 
       - name: Install Hatch
-        uses: pypa/hatch@install
-        env:
-          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
-        with:
-          version: 1.13.0
+        # See https://github.com/pypa/hatch/issues/1623
+        run: $pythonLocation/bin/pip install hatch==$HATCH_VERSION
 
       - name: Build wheel
         run: hatch build -t wheel
-        env:
-          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
 
       - name: Upload to pypi
         uses: pypa/gh-action-pypi-publish@release/v1
