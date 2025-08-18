@@ -25,7 +25,7 @@ The script is available via [pypi](https://pypi.org/project/yt-community-post-ar
 3. Run `yt-community-post-archiver`. For example:
 
    ```shell
-   yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community"
+   yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts"
    ```
 
    This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
@@ -55,7 +55,7 @@ From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), 
 4. Run `yt-community-post-archiver`. For example:
 
    ```shell
-   yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community"
+   yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts"
    ```
 
    This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
@@ -92,7 +92,7 @@ From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), 
 6. Run the archiver using `hatch run yt-community-post-archiver`. For example:
 
    ```shell
-   hatch run yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community"
+   hatch run yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts"
    ```
 
    This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
@@ -110,10 +110,10 @@ From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), 
 For example, let's say I run:
 
 ```shell
-yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "output/testing" -m 1  
+yt-community-post-archiver "https://www.youtube.com/@IRyS/posts" -o "output/testing" -m 1  
 ```
 
-This runs the archiver, directed to `https://www.youtube.com/@IRyS/community`, saving to `output/testing`, and gets
+This runs the archiver, directed to `https://www.youtube.com/@IRyS/posts`, saving to `output/testing`, and gets
 a maximum of one post. If you are running from the repo, then replace `yt-community-post-archiver` with
 `hatch run yt-community-post-archiver`.
 
@@ -148,7 +148,7 @@ details may change throughout the versions; this document should be updated to r
 If you want to set the save location, then use `-o`:
 
 ```shell
-yt-community-post-archiver "https://www.youtube.com/@IRyS/community" -o "/home/me/my_save"
+yt-community-post-archiver "https://www.youtube.com/@IRyS/posts" -o "/home/me/my_save"
 ```
 
 #### Logging in
@@ -174,7 +174,7 @@ creating a new profile for using this tool (whether it's Chrome or Firefox) just
 Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c`:
 
 ```shell
-yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/community" -c "/home/me/my_cookies_file.txt"
+yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/posts" -c "/home/me/my_cookies_file.txt"
 ```
 
 **Note that I've personally found this much flakier and occasionally fails in certain situations.** It should
@@ -186,7 +186,7 @@ work fine if you just want to get a few posts though, and already have a cookie 
 The default driver is Chrome, but Firefox should work as well.
 
 ```shell
-yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/community" -d "firefox"
+yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts" -d "firefox"
 ```
 
 ### Notes
