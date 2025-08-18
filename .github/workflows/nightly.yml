@@ -8,6 +8,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.12"
+  HATCH_VERSION: "1.13.0"
 
 jobs:
   build:
@@ -26,9 +27,8 @@ jobs:
           cache: "pip"
 
       - name: Install Hatch
-        uses: pypa/hatch@install
-        with:
-          version: 1.13.0
+        # See https://github.com/pypa/hatch/issues/1623
+        run: $pythonLocation/bin/pip install hatch==$HATCH_VERSION
 
       - name: Build wheel
         run: hatch build -t wheel
