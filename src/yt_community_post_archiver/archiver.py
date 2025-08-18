@@ -72,7 +72,7 @@ class Archiver:
         self.take_screenshots = settings.take_screenshots
         self.save_comments_types = settings.save_comments_types
         self.max_comments = settings.max_comments
-        self.original_handle = None
+        self.original_handle = ""
 
     def find_posts(self) -> list[tuple[WebElement, str]]:
         posts = []
@@ -101,7 +101,6 @@ class Archiver:
 
         while True:
             try:
-                print(f"is {url} visible? {post.is_displayed()}")
                 scroll_to_element(post, self.driver)
 
                 self.seen.add(url)
@@ -145,9 +144,9 @@ class Archiver:
         while True:
             try:
                 # Check the current URL isn't a post. If it is, try closing the current tab;
-                # if no tab is left, the root URL was a post, so halt.
+                # if only the original tab was left, then the root URL was a post, so halt.
                 if get_true_comment_count(self.driver) is not None:
-                    if not close_current_tab(self.driver, self.original_handle):
+                    if close_current_tab(self.driver, self.original_handle) == 1:
                         return False
 
                 self.driver.execute_script("window.scrollBy(0, 500);")

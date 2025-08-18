@@ -1,12 +1,12 @@
 import json
 import os
 from dataclasses import dataclass
-from urllib.parse import urlparse
-from urllib.parse import parse_qs
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import filetype
 import requests
+
 
 class PollEntry:
     def __init__(self, s: str) -> None:
@@ -46,7 +46,7 @@ class Post:
     is_members: bool
     relative_date: str
     approximate_num_comments: str | None
-    num_comments: str | None
+    num_comments: int | None
     num_thumbs_up: str | None
     poll: Poll | None
     when_archived: str
@@ -62,8 +62,8 @@ class Post:
                 print(f"err: couldn't make directory for post at {dir} - {ex}")
                 return
 
+        data_path = os.path.join(dir, "post.json")
         try:
-            data_path = os.path.join(dir, "post.json")
             with open(data_path, "w", encoding="utf-8") as f:
                 json.dump(
                     self.__dict__,
@@ -77,13 +77,13 @@ class Post:
             print(f"err: couldn't save data dump at {data_path}")
 
         for itx, image in enumerate(self.images):
-            try:
-                img_data = requests.get(image).content
-                img_format = filetype.guess(img_data)
-                img_extension = img_format.extension if img_format else "png"
-                img_name = f"{post_id}-{itx}.{img_extension}"
-                img_path = os.path.join(dir, img_name)
+            img_data = requests.get(image).content
+            img_format = filetype.guess(img_data)
+            img_extension = img_format.extension if img_format else "png"
+            img_name = f"{post_id}-{itx}.{img_extension}"
+            img_path = os.path.join(dir, img_name)
 
+            try:
                 if not os.path.exists(img_path):
                     with open(img_path, "wb") as f:
                         f.write(img_data)
