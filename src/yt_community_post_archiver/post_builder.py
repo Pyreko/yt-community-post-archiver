@@ -3,13 +3,13 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TypeIs
 
 from PIL import Image
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
+from typing_extensions import TypeIs
 
 from yt_community_post_archiver.arguments import CommentType, MembersPostType
 from yt_community_post_archiver.comment import build_comment
