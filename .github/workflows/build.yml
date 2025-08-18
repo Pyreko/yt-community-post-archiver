@@ -84,6 +84,8 @@ jobs:
 
       - name: Install Hatch
         uses: pypa/hatch@install
+        env:
+          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
         with:
           version: 1.13.0
 
