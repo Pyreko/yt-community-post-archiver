@@ -35,6 +35,11 @@ jobs:
         with:
           version: 1.13.0
 
+      - name: Fix hatch
+        run: hatch env prune
+        env:
+          HATCH_PYTHON: ${{ steps.setup.outputs.python-path }}
+
       - name: Install pytest
         run: pip install pytest
 
