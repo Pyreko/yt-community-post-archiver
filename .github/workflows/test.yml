@@ -30,7 +30,7 @@ jobs:
 
       - name: Install Hatch
         # See https://github.com/pypa/hatch/issues/1623
-        run: $pythonLocation/bin/pip install hatch@1.13.0
+        run: $pythonLocation/bin/pip install hatch==1.13.0
 
       - name: Install pytest
         run: $pythonLocation/bin/pip install pytest
