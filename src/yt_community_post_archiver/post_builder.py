@@ -86,8 +86,8 @@ def _get_images(post: WebElement) -> list[str]:
                 img_button.click()
 
     return [
-        # Basically replace s640 or whatever with a bigger value. 3840 seems to be ok.
-        url.split("=")[0] + "=s3840"
+        # replace scaling parameters to retrieve max resolution
+        url.split("=s")[0] + "=s0?imgmax=0"
         for url in filter(
             None,
             (
