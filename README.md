@@ -192,8 +192,7 @@ yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts" -d "fir
 ### Notes
 
 - Poll vote percentages can only be shown if you are logged in due to how vote results are only shown if the user has voted before.
-  - If you have not voted on the poll before, the tool will temporarily vote for you to grab vote percentages, but will then try to undo the
-    vote to avoid messing with anything, but this isn't perfect!
+  - If you have not voted on the poll before, the tool will temporarily vote for you so it can see the vote percentages. It will try to remove the vote if it had to do this to avoid affecting anything, though be aware that this may sometimes fail!
 
 ## Other
 

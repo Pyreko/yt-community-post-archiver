@@ -32,7 +32,7 @@ dependencies = [
   "sortedcontainers==2.4.0",
   "trio==0.30.0",
   "trio-websocket==0.12.2",
-  "urllib3==2.5.0",
+  "urllib3==2.6.3",
   "wsproto==1.2.0",
   "filetype==1.2.0",
   "pillow>=11.2.1",
