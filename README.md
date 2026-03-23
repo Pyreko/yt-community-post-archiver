@@ -81,18 +81,18 @@ From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), 
    source venv/bin/activate
    ```
 
-4. (Optional) Install `hatch` if you do not already have it:
+4. (Optional) Install `uv` if you do not already have it:
 
    ```shell
-   pip3 install hatch
+   pip3 install uv
    ```
 
 5. Make sure the computer you're running this on has Chrome or Firefox, as it uses a browser to grab posts.
 
-6. Run the archiver using `hatch run yt-community-post-archiver`. For example:
+6. Run the archiver using `uv run yt-community-post-archiver`. For example:
 
    ```shell
-   hatch run yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts"
+   uv run yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts"
    ```
 
    This will spawn a headless Chrome instance (that is, you won't see a Chrome window) and download all posts
@@ -115,7 +115,7 @@ yt-community-post-archiver "https://www.youtube.com/@IRyS/posts" -o "output/test
 
 This runs the archiver, directed to `https://www.youtube.com/@IRyS/posts`, saving to `output/testing`, and gets
 a maximum of one post. If you are running from the repo, then replace `yt-community-post-archiver` with
-`hatch run yt-community-post-archiver`.
+`uv run yt-community-post-archiver`.
 
 At the time of writing, this gives me two files that look like this - `post.json`:
 
