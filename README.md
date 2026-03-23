@@ -173,7 +173,7 @@ creating a new profile for using this tool (whether it's Chrome or Firefox) just
 
 ##### Using a cookies file
 
-Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c`:
+Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c` / `--cookie` (`--cookie-path` also works):
 
 ```shell
 yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/posts" -c "/home/me/my_cookies_file.txt"
@@ -181,6 +181,10 @@ yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/posts" -c "/ho
 
 **Note that I've personally found this much flakier and occasionally fails in certain situations.** It should
 work fine if you just want to get a few posts though, and already have a cookie file for things like `ytarchive`.
+
+When using this from WSL, avoid reusing a Windows Chrome profile path (`/mnt/c/.../User Data`) with `-p`.
+Linux Chrome/Chromium in WSL does not reliably read/decrypt Windows profile data. Use a Linux profile directory
+instead (for example `~/.config/google-chrome`) or use a cookie file.
 
 #### Use Firefox instead of Chrome as the driver
 
