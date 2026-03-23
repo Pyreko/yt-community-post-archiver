@@ -7,6 +7,7 @@ from enum import Enum
 def _load_module(name: str, path: str):
     package_module = types.ModuleType("yt_community_post_archiver")
     package_module.__path__ = []  # type: ignore[attr-defined]
+    package_module.__version__ = "0.0.0"
     sys.modules["yt_community_post_archiver"] = package_module
 
     helpers_module = types.ModuleType("yt_community_post_archiver.helpers")

@@ -186,6 +186,10 @@ When using this from WSL, avoid reusing a Windows Chrome profile path (`/mnt/c/.
 Linux Chrome/Chromium in WSL does not reliably read/decrypt Windows profile data. Use a Linux profile directory
 instead (for example `~/.config/google-chrome`) or use a cookie file.
 
+When using this from WSL, avoid reusing a Windows Chrome profile path (`/mnt/c/.../User Data`) with `-p`.
+Linux Chrome/Chromium in WSL does not reliably read/decrypt Windows profile data. Use a Linux profile directory
+instead (for example `~/.config/google-chrome`) or use a cookie file.
+
 #### Use Firefox instead of Chrome as the driver
 
 The default driver is Chrome, but Firefox should work as well.
