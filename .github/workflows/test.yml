@@ -11,13 +11,13 @@ on:
     - cron: "0 0 * * 1"
 
 env:
-  HATCH_VERSION: "1.13.0"
+  UV_VERSION: "0.10.12"
 
 jobs:
   test:
     strategy:
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.13", "3.14"]
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
@@ -31,20 +31,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
 
-      - name: Install Hatch
-        # See https://github.com/pypa/hatch/issues/1623
-        run: $pythonLocation/bin/pip install hatch==$HATCH_VERSION
+      - name: Install uv
+        run: $pythonLocation/bin/pip install uv==$UV_VERSION
 
       - name: Install pytest
         run: $pythonLocation/bin/pip install pytest
 
       - name: Run tests
-        run: hatch test
+        run: uv run pytest
         env:
           TEST_PROFILES: true
 
       - name: Test building
-        run: hatch build -t wheel
+        run: uv build
 
       - name: Test running the binary
         run: |

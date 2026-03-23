@@ -7,8 +7,8 @@ on:
       - main
 
 env:
-  PYTHON_VERSION: "3.12"
-  HATCH_VERSION: "1.13.0"
+  PYTHON_VERSION: "3.13"
+  UV_VERSION: "0.10.12"
 
 jobs:
   build:
@@ -26,12 +26,11 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
 
-      - name: Install Hatch
-        # See https://github.com/pypa/hatch/issues/1623
-        run: $pythonLocation/bin/pip install hatch==$HATCH_VERSION
+      - name: Install uv
+        run: $pythonLocation/bin/pip install uv==$UV_VERSION
 
       - name: Build wheel
-        run: hatch build -t wheel
+        run: uv build
 
       - name: Delete the old nightly release
         run: |
