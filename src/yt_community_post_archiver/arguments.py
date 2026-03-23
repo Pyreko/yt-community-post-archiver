@@ -3,9 +3,8 @@ import shlex
 from dataclasses import dataclass
 from enum import Enum, unique
 
+from yt_community_post_archiver import __version__
 from yt_community_post_archiver.helpers import Driver
-
-__version__ = "0.1.8"
 
 
 @unique
