@@ -101,6 +101,7 @@ def _create_parser() -> argparse.ArgumentParser:
         "-c",
         "--cookie",
         "--cookie-path",
+        dest="cookie_path",
         type=str,
         required=False,
         default=None,
