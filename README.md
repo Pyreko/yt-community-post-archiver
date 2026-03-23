@@ -1,17 +1,19 @@
 # yt-community-post-archiver
 
-Archives YouTube community posts. Will try and grab the post's text content, images at
-as large of a resolution as possible, polls, and some other various bits of metadata.
-Works on members posts too.
+Archives YouTube community posts. Will try and grab the post's text content, images at as large of a resolution as possible, polls, and some other various bits of metadata. Works on members posts too if you're logged in/using cookies.
 
-Note this was initially written _really_ quickly, and might not work every time
-(my Python is also only good at a scripting level). It is also a bit fragile,
-and YT updates might break it. Feel free to let me know if it's broken, and if I
-have the bandwidth I'll try and fix it.
+Note that:
+
+- This was originally written very quickly to archive things in time for something, so it is somewhat scuffed.
+- The scraping is also done in a way which is somewhat fragile, and may break easily as YouTube updates things.
+
+Feel free to report problems or suggest features, though as a disclaimer,
+_I may not have the bandwidth or interest to tackle all reported issues_.
+PRs are always welcome, though!
 
 ## Usage
 
-### From pypi
+### From PyPO
 
 The script is available via [pypi](https://pypi.org/project/yt-community-post-archiver/):
 
@@ -156,7 +158,7 @@ yt-community-post-archiver "https://www.youtube.com/@IRyS/posts" -o "/home/me/my
 You may want to provide a logged-in instance to this tool as this is the only way to get membership posts or certain details like poll vote percentages.
 The tool supports two methods:
 
-##### Use browser profile
+##### Using a browser profile
 
 I've found this way works a bit better from personal experience. You can re-use an existing browser profile that is
 logged into your YouTube account to grab membership posts with the `-p` flag, where the path is where your user
@@ -169,7 +171,7 @@ yt-community-post-archiver -o output/ -p ~/.config/chromium/  "https://www.youtu
 By default this will use the default profile name; if you need to override this then use `-n` as well. **I highly recommend
 creating a new profile for using this tool (whether it's Chrome or Firefox) just so it doesn't accidentally delete some tabs or something**.
 
-##### Use cookies file
+##### Using a cookies file
 
 Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c`:
 
@@ -178,8 +180,7 @@ yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/posts" -c "/ho
 ```
 
 **Note that I've personally found this much flakier and occasionally fails in certain situations.** It should
-work fine if you just want to get a few posts though, and already have a cookie file for things like
-`ytarchive`.
+work fine if you just want to get a few posts though, and already have a cookie file for things like `ytarchive`.
 
 #### Use Firefox instead of Chrome as the driver
 
@@ -189,12 +190,13 @@ The default driver is Chrome, but Firefox should work as well.
 yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts" -d "firefox"
 ```
 
-### Notes
-
-- Poll vote percentages can only be shown if you are logged in due to how vote results are only shown if the user has voted before.
-  - If you have not voted on the poll before, the tool will temporarily vote for you so it can see the vote percentages. It will try to remove the vote if it had to do this to avoid affecting anything, though be aware that this may sometimes fail!
-
 ## Other
+
+### Polls
+
+Poll vote percentages can only be shown if you are logged in, due to how vote results are only shown if the user has voted before.
+
+This also means that if you are logged in but have not voted on the poll before in a post, the tool will temporarily vote for you so it can see the vote percentages. It will try to remove the vote if it had to do this to avoid affecting anything, though be aware that this may sometimes fail!
 
 ### How does this work?
 
