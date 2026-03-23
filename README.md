@@ -156,7 +156,7 @@ yt-community-post-archiver "https://www.youtube.com/@IRyS/posts" -o "/home/me/my
 #### Logging in
 
 You may want to provide a logged-in instance to this tool as this is the only way to get membership posts or certain details like poll vote percentages.
-The tool supports two methods:
+The tool supports two methods; if neither are working, try using both at the same time.
 
 ##### Using a browser profile
 
@@ -180,7 +180,7 @@ yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/posts" -c "/ho
 ```
 
 **Note that I've personally found this much flakier and occasionally fails in certain situations.** It should
-work fine if you just want to get a few posts though, and already have a cookie file for things like `ytarchive`.
+work fine if you just want to get a few posts though, and already have a cookie file for things like `ytarchive` or `yt-dlp`.
 
 #### Use Firefox instead of Chrome as the driver
 
