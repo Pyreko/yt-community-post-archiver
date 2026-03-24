@@ -1,8 +1,10 @@
 import io
 import os
+import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
@@ -23,34 +25,6 @@ from yt_community_post_archiver.helpers import (
 )
 from yt_community_post_archiver.post import Poll, PollEntry, Post, get_post_id
 
-from urllib.parse import urlparse, parse_qs, unquote
-import re
-
-def unwrap_youtube_redirect(url: str) -> str:
-    if "youtube.com/redirect" not in url:
-        return url
-
-    parsed = urlparse(url)
-    query = parse_qs(parsed.query)
-
-    if "q" in query:
-        return unquote(query["q"][0])
-
-    return url
-
-
-def fix_text_with_links(text: str, links: list[str]) -> str:
-    def replace(match):
-        truncated = match.group(0)
-        prefix = truncated.replace("...", "")
-
-        for l in links:
-            if l.startswith(prefix):
-                return l
-
-        return truncated
-
-    return re.sub(r'https?://[^\s]+\.{3}', replace, text)
 
 def _is_members_post(post: WebElement) -> bool:
     return bool(post.find_elements(By.CLASS_NAME, "ytd-sponsors-only-badge-renderer"))
@@ -90,18 +64,32 @@ def _get_links(post: WebElement) -> list[str]:
     def link_filter(link: str | None) -> TypeIs[str]:
         return link is not None and ("accounts.google.com" not in link)
 
+    def unwrap_youtube_redirect(url: str) -> str:
+        if "youtube.com/redirect" not in url:
+            return url
+
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+
+        if "q" in query:
+            return unquote(query["q"][0])
+
+        return url
+
     return list(
         dict.fromkeys(
-            filter(
-                link_filter,
-                (
-                    link.get_attribute("href")
-                    for link in post.find_elements(By.TAG_NAME, "a")
+            map(
+                unwrap_youtube_redirect,
+                filter(
+                    link_filter,
+                    (
+                        link.get_attribute("href")
+                        for link in post.find_elements(By.TAG_NAME, "a")
+                    ),
                 ),
             )
         )
     )[1:]
-
 
 
 def _get_images(post: WebElement) -> list[str]:
@@ -144,11 +132,28 @@ def _get_approximate_num_comments(post: WebElement) -> str | None:
         return None
 
 
-def _get_text(post: WebElement) -> str:
+def _get_text(post: WebElement, links: list[str]) -> str:
+    def fix_text_with_links(text: str, links: list[str]) -> str:
+        def replace(match):
+            truncated = match.group(0)
+            prefix = truncated.replace("...", "")
+
+            for l in links:
+                if l.startswith(prefix):
+                    return l
+
+            return truncated
+
+        return re.sub(r"https?://[^\s]+\.{3}", replace, text)
+
     text_elements = post.find_elements(By.ID, "content")
     if not text_elements:
         return ""
-    return text_elements[0].get_attribute("innerText") or ""
+
+    original_text = text_elements[0].get_attribute("innerText") or ""
+    fixed_text = fix_text_with_links(original_text, links)
+
+    return fixed_text
 
 
 def _get_poll(
@@ -357,12 +362,10 @@ class PostBuilder:
                 return
 
         links = _get_links(post)
-        real_links = [unwrap_youtube_redirect(l) for l in links]
         images = _get_images(post)
         approximate_num_comments = _get_approximate_num_comments(post)
         num_thumbs_up = _get_likes(post)
-        text = _get_text(post)
-        full_text = fix_text_with_links(text, real_links)
+        text = _get_text(post, links)
         poll = _get_poll(post, self.driver)
 
         # The following block may require opening things in a new tab.
@@ -380,8 +383,8 @@ class PostBuilder:
 
         post = Post(
             url=url,
-            text=full_text,
-            links=real_links,
+            text=text,
+            links=links,
             # We skip the first image since that's always the profile picture.
             images=images[1:],
             is_members=is_members,
@@ -403,5 +406,3 @@ class PostBuilder:
 
         if opened_tab and opened_post is not None:
             close_current_tab(self.driver, self.original_handle)
-
-
