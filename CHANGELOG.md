@@ -7,6 +7,11 @@
 - Adjust image resolution URL used to be higher (thanks to [neptuwunium](https://github.com/neptuwunium)).
 - Support using Chrome/Chromium remote debugging port as another way to run the program via `--remote-debugging-port`.
 
+### Bug Fixes
+
+- Expand shortened links in text (thanks to [WesleyBlancoYuan](github.com/WesleyBlancoYuan)).
+- Fix cookies option (thanks to [WesleyBlancoYuan](github.com/WesleyBlancoYuan)).
+
 ### Other
 
 - Switch to using `uv` for package/project management.
