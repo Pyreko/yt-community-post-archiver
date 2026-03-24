@@ -34,13 +34,25 @@ jobs:
       - name: Install uv
         run: $pythonLocation/bin/pip install uv==$UV_VERSION
 
-      - name: Install pytest
-        run: $pythonLocation/bin/pip install pytest
+      - name: Install tools
+        run: |
+          uv tool install pytest
+          uv tool install black
+          uv tool install isort
+          uv tool install ruff
 
       - name: Run tests
         run: uv run pytest
         env:
           TEST_PROFILES: true
+
+      - name: Run ruff
+        run: uv run ruff check .
+
+      - name: Format code.
+        run: |
+          uv run black --check .
+          uv run isort --check .
 
       - name: Test building
         run: uv build

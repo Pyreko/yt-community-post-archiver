@@ -15,7 +15,6 @@ from yt_community_post_archiver.arguments import ArchiverSettings, get_settings
 from yt_community_post_archiver.cookies import parse_cookies
 from yt_community_post_archiver.helpers import (
     LOAD_SLEEP_SECS,
-    Driver,
     close_current_tab,
     get_post_link,
     init_driver,
@@ -48,6 +47,7 @@ class Archiver:
             settings.binary_override,
             width,
             height,
+            settings.remote_debugging_port,
         )
 
         def signal_handler(_sig_num, _frame):

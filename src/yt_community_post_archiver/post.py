@@ -14,12 +14,12 @@ class PollEntry:
 
         try:
             self.option = split[0]
-        except:
+        except Exception as _e:
             self.option = None
 
         try:
             self.percentage = int(split[1].split("%")[0])
-        except:
+        except Exception as _e:
             self.percentage = None
 
 
@@ -92,8 +92,8 @@ class Post:
                     default=lambda o: o.__dict__,
                     skipkeys=True,
                 )
-        except:
-            print(f"err: couldn't save data dump at {data_path}")
+        except Exception as ex:
+            print(f"err: couldn't save data dump at {data_path} - {ex}")
 
         for itx, image in enumerate(self.images):
             img_data = requests.get(image).content
@@ -109,5 +109,5 @@ class Post:
                 else:
                     # print(f"Skipping saving image at {img_path} as it's already been saved.")
                     pass
-            except:
-                print(f"err: couldn't save image `{image}` dump at {img_path}")
+            except Exception as ex:
+                print(f"err: couldn't save image `{image}` dump at {img_path} - {ex}")

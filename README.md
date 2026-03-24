@@ -155,8 +155,7 @@ yt-community-post-archiver "https://www.youtube.com/@IRyS/posts" -o "/home/me/my
 
 #### Logging in
 
-You may want to provide a logged-in instance to this tool as this is the only way to get membership posts or certain details like poll vote percentages.
-The tool supports two methods:
+You may want to provide a logged-in instance to this tool as this is the only way to get membership posts or certain details like poll vote percentages. The tool supports a few methods.
 
 ##### Using a browser profile
 
@@ -185,6 +184,22 @@ You can see how to get a cookies file by following [the instructions on how to d
 
 Also note that when using this from WSL, avoid reusing a Windows Chrome profile path (`/mnt/c/.../User Data`) with `-p`. Linux Chrome/Chromium in WSL does not reliably read/decrypt Windows profile data. Use a Linux profile directory
 instead (for example `~/.config/google-chrome`) or use a cookie file.
+
+##### Using remote debugging to connect to a running instance
+
+You can also start Chrome/Chromium with a remote debugging port, and connect this program to it. For example:
+
+1. Start up Chrome/Chromium with a remote debugging port:
+
+    ```shell
+    chromium --remote-debugging-port=9222 --profile-directory="Profile 1"
+    ```
+
+2. Start `yt-community-post-archiver`:
+
+    ```shell
+    yt-community-post-archiver "https://www.youtube.com/@kaminariclara/posts" -o "output" --remote-debugging-port 9222
+    ```
 
 #### Use Firefox instead of Chrome as the driver
 
