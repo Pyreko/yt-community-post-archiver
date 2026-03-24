@@ -72,6 +72,7 @@ class ArchiverSettings:
     max_comments: int | None
     take_screenshots: bool
     skip_existing: bool
+    remote_debugging_port: int | None
 
 
 def _create_parser() -> argparse.ArgumentParser:
@@ -174,6 +175,13 @@ def _create_parser() -> argparse.ArgumentParser:
         help="Skip any posts if the save location already contains data.",
     )
     parser.add_argument(
+        "--remote-debugging-port",
+        type=int,
+        required=False,
+        default=None,
+        help="Connect to an running Chrome/Chromium instance launched with --remote-debugging-port=PORT.",
+    )
+    parser.add_argument(
         "-v",
         "--version",
         action="version",
@@ -218,6 +226,7 @@ def get_settings() -> tuple[ArchiverSettings, int]:
             max_comments=args.max_comments,
             take_screenshots=args.take_screenshots,
             skip_existing=args.skip_existing,
+            remote_debugging_port=args.remote_debugging_port,
         ),
         rerun,
     )

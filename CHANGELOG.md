@@ -5,6 +5,7 @@
 ### Features
 
 - Adjust image resolution URL used to be higher (thanks to [neptuwunium](https://github.com/neptuwunium)).
+- Support using Chrome/Chromium remote debugging port as another way to run the program via `--remote-debugging-port`.
 
 ### Other
 

@@ -36,6 +36,7 @@ def init_driver(
     binary_override: str | None,
     width: int,
     height: int,
+    remote_debugging_port: int | None = None,
 ) -> ChromeWebDriver | FirefoxWebDriver:
     """
     Initialize the driver and return it, based on the settings passed.
@@ -44,6 +45,11 @@ def init_driver(
     match driver:
         case Driver.CHROME:
             options = webdriver.ChromeOptions()
+
+            if remote_debugging_port is not None:
+                options.debugger_address = f"127.0.0.1:{remote_debugging_port}"
+                return webdriver.Chrome(options)
+
             options.add_argument(f"--window-size={width},{height}")
             options.add_argument("--disable-gpu")
 
@@ -52,7 +58,6 @@ def init_driver(
 
             if profile_dir:
                 profile_name = profile_name if profile_name is not None else "Default"
-
                 options.add_argument(f"--user-data-dir={profile_dir}")
                 options.add_argument(f"--profile-directory={profile_name}")
 

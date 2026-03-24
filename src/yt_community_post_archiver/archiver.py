@@ -47,6 +47,7 @@ class Archiver:
             settings.binary_override,
             width,
             height,
+            settings.remote_debugging_port,
         )
 
         def signal_handler(_sig_num, _frame):
