@@ -180,7 +180,7 @@ yt-community-post-archiver "https://www.youtube.com/@WatsonAmelia/posts" -c "/ho
 
 You can see how to get a cookies file by following [the instructions on how to do so from yt-dlp](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp).
 
-**Note that I've personally found this much flakier and occasionally fails in certain situations, so YMMV.**
+**Note that from personal experience, this sometimes breaks, so your mileage may vary.**
 
 Also note that when using this from WSL, avoid reusing a Windows Chrome profile path (`/mnt/c/.../User Data`) with `-p`. Linux Chrome/Chromium in WSL does not reliably read/decrypt Windows profile data. Use a Linux profile directory
 instead (for example `~/.config/google-chrome`) or use a cookie file.
