@@ -123,27 +123,29 @@ At the time of writing, this gives me two files that look like this - `post.json
 
 ```json
 {
-    "url": "https://www.youtube.com/post/Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo",
-    "text": "Carbonated Love Wallpaper for those who love the thumbnail :D Courtesy of kanauru!  Stream the song if you haven't yet!!\n\n⬇️FULL MV⬇️\nhttps://youtu.be/DjNNpw2x2dU?si=B0heA...",
+    "url": "https://www.youtube.com/post/UgkxzjFK9MbmdHoUW7Tyg54ncKqzkQxAb1AN",
+    "text": "😈💎NEW ORIGINAL SONG MV RELEASE💎👼\n\n\r\nTwiLight has just dropped on the internet and it is LOUD with a fantastically spicy MV to boot!! \n\n\r\nThe song will also be releasing on streaming platforms at midnight JST/3PM GMT/7AM PST!\r\nhttps://cover.lnk.to/mrc6zl\n\n\r\nComposer and Arrangement:\r 雄之助\nLyrics\r: 牛肉\nMV\r: Kanauru\nLogo Design\r: saku㊴  \nChoreography\r: まりやん",
     "images": [
-        "https://yt3.ggpht.com/KfLmUOa22rydRozKY34zopeHP39EN0u_X5qLplQiKQd1i2rxxidrcG4RxH5s3ceGY9ql8VfIQgdA=s3840"
+        "https://i.ytimg.com/vi/dFZ1oTSFuIE/hq720.jpg?sqp=-oaymwEnCOgCEMoBSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBEYbFyLyBzcYH2qy6j4jcoSEw4Uw=s0?imgmax=0"
     ],
     "links": [
-        "https://www.youtube.com/post/Ugkxbg1AcEsx5spUWRjgtF8cvXDDgUIW1SFo",
-        "https://www.youtube.com/watch?v=DjNNpw2x2dU&t=0s",
+        "https://www.youtube.com/post/UgkxzjFK9MbmdHoUW7Tyg54ncKqzkQxAb1AN",
+        "https://cover.lnk.to/mrc6zl",
+        "https://www.youtube.com/watch?v=dFZ1oTSFuIE",
+        "https://www.youtube.com/channel/UC8rcEBzJSleTkf_-agPM20g"
     ],
     "is_members": false,
-    "relative_date": "3 months ago",
-    "approximate_num_comments": "111",
-    "num_comments": "111",
-    "num_thumbs_up": "7.3K",
+    "relative_date": "1 year ago (edited)",
+    "approximate_num_comments": "35",
+    "num_comments": "35",
+    "num_thumbs_up": "1.6K",
     "poll": null,
-    "when_archived": "2024-10-16 05:20:18.045639+00:00"
+    "when_archived": "2026-03-24 04:12:16.851436+00:00"
 }
 ```
 
-and an image file called `Ugkxljr0040TiZZTAVON7GBtrPz8jJEZQVP8-0.jpg`, containing the included image. Note that some
-details may change throughout the versions; this document should be updated to reflect that though.
+and an image file called `UgkxzjFK9MbmdHoUW7Tyg54ncKqzkQxAb1AN-0.jpg`, containing the included image. Note that some
+details may change throughout the versions; this document will be updated to reflect that though.
 
 #### Set save location
 
