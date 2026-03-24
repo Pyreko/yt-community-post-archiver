@@ -12,6 +12,7 @@ class Cookie:
     domain: str
     # include_subdomains: bool
     path: str
+    secure: bool
     httpOnly: bool
     expiry: int
     name: str
@@ -35,13 +36,17 @@ def parse_cookies(cookies_file: Path) -> list[Cookie]:
     with open(cookies_file) as f:
         for line in f:
             line = line.lstrip()
+            is_http_only = False
 
             # Ignore empty lines or comments.
-            if len(line) == 0 or line.startswith("#"):
+            if len(line) == 0:
                 continue
 
-            # Ensure files end with newlines.
-            if not line.endswith("\n"):
+            # `#HttpOnly_` is a special Netscape format prefix.
+            if line.startswith("#HttpOnly_"):
+                is_http_only = True
+                line = line.removeprefix("#HttpOnly_")
+            elif line.startswith("#"):
                 continue
 
             fields = line.rstrip().split("\t")
@@ -52,7 +57,8 @@ def parse_cookies(cookies_file: Path) -> list[Cookie]:
             cookie = Cookie(
                 domain=fields[0],
                 path=fields[2],
-                httpOnly=__to_bool(fields[3]),
+                secure=__to_bool(fields[3]),
+                httpOnly=is_http_only,
                 expiry=int(fields[4]),
                 name=fields[5],
                 value=fields[6],

@@ -5,6 +5,7 @@ import signal
 import sys
 import time
 import traceback
+from collections import defaultdict
 from pathlib import Path
 
 from selenium.webdriver.common.by import By
@@ -73,6 +74,34 @@ class Archiver:
         self.save_comments_types = settings.save_comments_types
         self.max_comments = settings.max_comments
         self.original_handle = ""
+
+    def set_cookies(self):
+        if self.cookie_path is None:
+            return
+
+        if not os.path.exists(self.cookie_path):
+            raise Exception(f"Cookies path at {self.cookie_path} doesn't exist!")
+
+        path = Path(self.cookie_path)
+        cookies = parse_cookies(path)
+        if not cookies:
+            print(f"warning: no cookies were parsed from {self.cookie_path}")
+            return
+
+        by_domain = defaultdict(list)
+        for cookie in cookies:
+            by_domain[cookie.domain].append(cookie)
+
+        for domain, domain_cookies in by_domain.items():
+            domain = domain.lstrip(".")
+            if not domain:
+                continue
+
+            self.driver.get(f"https://{domain}")
+            time.sleep(LOAD_SLEEP_SECS)
+
+            for cookie in domain_cookies:
+                self.driver.add_cookie(cookie.__dict__)
 
     def find_posts(self) -> list[tuple[WebElement, str]]:
         posts = []
@@ -167,22 +196,8 @@ class Archiver:
             self.original_handle = self.driver.current_window_handle
 
             # Validate that the cookies path is valid if set, then set cookies.
-            if self.cookie_path is not None:
-                if os.path.exists(self.cookie_path):
-                    time.sleep(LOAD_SLEEP_SECS)
-
-                    path = Path(self.cookie_path)
-                    cookies = parse_cookies(path)
-
-                    for cookie in cookies:
-                        if cookie.domain in self.url:
-                            self.driver.add_cookie(cookie.__dict__)
-
-                    self.driver.refresh()
-                else:
-                    raise Exception(
-                        f"Cookies path at {self.cookie_path} doesn't exist!"
-                    )
+            self.set_cookies()
+            self.driver.get(self.url)
 
             time.sleep(LOAD_SLEEP_SECS)
             num_seen = len(self.seen)
