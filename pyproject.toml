@@ -57,4 +57,4 @@ module-name = "yt_community_post_archiver"
 yt-community-post-archiver = "yt_community_post_archiver:main"
 
 [dependency-groups]
-dev = ["pytest>=8.3", "pytest-rerunfailures>=15.0"]
+dev = ["pytest>=8.3", "pytest-rerunfailures>=15.0", "black", "isort", "ruff"]

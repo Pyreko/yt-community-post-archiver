@@ -17,7 +17,6 @@ from yt_community_post_archiver.arguments import CommentType, MembersPostType
 from yt_community_post_archiver.comment import build_comment
 from yt_community_post_archiver.helpers import (
     LOAD_SLEEP_SECS,
-    Driver,
     close_current_tab,
     find_post_element,
     get_post_link,
