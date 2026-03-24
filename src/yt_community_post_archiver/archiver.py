@@ -265,7 +265,7 @@ class Archiver:
 
 
 def main():
-    (settings, rerun) = get_settings()
+    settings, rerun = get_settings()
 
     try:
         if rerun == 1:
