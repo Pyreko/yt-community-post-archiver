@@ -29,7 +29,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
 
-      - name: Install Hatch
+      - name: Install uv
         run: $pythonLocation/bin/pip install uv==$UV_VERSION
 
       - name: Build wheel
@@ -79,12 +79,11 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
 
-      - name: Install Hatch
-        # See https://github.com/pypa/hatch/issues/1623
-        run: $pythonLocation/bin/pip install hatch==$UV_VERSION
+      - name: Install uv
+        run: $pythonLocation/bin/pip install uv==$UV_VERSION
 
       - name: Build wheel
-        run: hatch build -t wheel
+        run: uv build
 
       - name: Upload to pypi
         uses: pypa/gh-action-pypi-publish@release/v1
