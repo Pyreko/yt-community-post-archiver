@@ -11,7 +11,6 @@ from selenium.common.exceptions import (
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
@@ -36,6 +35,7 @@ def init_driver(
     binary_override: str | None,
     width: int,
     height: int,
+    remote_debugging_port: int | None = None,
 ) -> ChromeWebDriver | FirefoxWebDriver:
     """
     Initialize the driver and return it, based on the settings passed.
@@ -44,6 +44,11 @@ def init_driver(
     match driver:
         case Driver.CHROME:
             options = webdriver.ChromeOptions()
+
+            if remote_debugging_port is not None:
+                options.debugger_address = f"127.0.0.1:{remote_debugging_port}"
+                return webdriver.Chrome(options)
+
             options.add_argument(f"--window-size={width},{height}")
             options.add_argument("--disable-gpu")
 
@@ -52,7 +57,6 @@ def init_driver(
 
             if profile_dir:
                 profile_name = profile_name if profile_name is not None else "Default"
-
                 options.add_argument(f"--user-data-dir={profile_dir}")
                 options.add_argument(f"--profile-directory={profile_name}")
 
