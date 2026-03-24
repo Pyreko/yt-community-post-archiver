@@ -11,7 +11,7 @@ Feel free to report problems or suggest features, though as a disclaimer,
 _I may not have the bandwidth or interest to tackle all reported issues_.
 PRs are always welcome, though!
 
-## Usage
+## Installation/Usage
 
 ### From PyPI
 
@@ -107,7 +107,7 @@ From [Releases](https://github.com/Pyreko/yt-community-post-archiver/releases), 
    yt-community-post-archiver --help
    ```
 
-### Examples
+## Examples
 
 For example, let's say I run:
 
@@ -147,7 +147,7 @@ At the time of writing, this gives me two files that look like this - `post.json
 and an image file called `UgkxzjFK9MbmdHoUW7Tyg54ncKqzkQxAb1AN-0.jpg`, containing the included image. Note that some
 details may change throughout the versions; this document will be updated to reflect that though.
 
-#### Set save location
+### Set save location
 
 If you want to set the save location, then use `-o`:
 
@@ -155,11 +155,11 @@ If you want to set the save location, then use `-o`:
 yt-community-post-archiver "https://www.youtube.com/@IRyS/posts" -o "/home/me/my_save"
 ```
 
-#### Logging in
+### Logging in
 
 You may want to provide a logged-in instance to this tool as this is the only way to get membership posts or certain details like poll vote percentages. The tool supports a few methods.
 
-##### Using a browser profile
+#### Using a browser profile
 
 I've found this way works a bit better from personal experience. You can re-use an existing browser profile that is
 logged into your YouTube account to grab membership posts with the `-p` flag, where the path is where your user
@@ -172,7 +172,7 @@ yt-community-post-archiver -o output/ -p ~/.config/chromium/  "https://www.youtu
 By default this will use the default profile name; if you need to override this then use `-n` as well. **I highly recommend
 creating a new profile for using this tool (whether it's Chrome or Firefox) just so it doesn't accidentally delete some tabs or something**.
 
-##### Using a cookies file
+#### Using a cookies file
 
 Another method is if you have a Netscape-format cookies file, which you can pass the path with `-c` / `--cookies`:
 
@@ -187,7 +187,7 @@ You can see how to get a cookies file by following [the instructions on how to d
 Also note that when using this from WSL, avoid reusing a Windows Chrome profile path (`/mnt/c/.../User Data`) with `-p`. Linux Chrome/Chromium in WSL does not reliably read/decrypt Windows profile data. Use a Linux profile directory
 instead (for example `~/.config/google-chrome`) or use a cookie file.
 
-##### Using remote debugging to connect to a running instance
+#### Using remote debugging to connect to a running instance
 
 You can also start Chrome/Chromium with a remote debugging port, and connect this program to it. For example:
 
@@ -203,7 +203,7 @@ You can also start Chrome/Chromium with a remote debugging port, and connect thi
     yt-community-post-archiver "https://www.youtube.com/@kaminariclara/posts" -o "output" --remote-debugging-port 9222
     ```
 
-#### Use Firefox instead of Chrome as the driver
+### Use Firefox instead of Chrome as the driver
 
 The default driver is Chrome, but Firefox should work as well.
 
@@ -211,7 +211,7 @@ The default driver is Chrome, but Firefox should work as well.
 yt-community-post-archiver "https://www.youtube.com/@PomuRainpuff/posts" -d "firefox"
 ```
 
-## Other
+## Other Information
 
 ### Polls
 
