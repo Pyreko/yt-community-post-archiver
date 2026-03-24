@@ -13,7 +13,7 @@ PRs are always welcome, though!
 
 ## Usage
 
-### From PyPO
+### From PyPI
 
 The script is available via [pypi](https://pypi.org/project/yt-community-post-archiver/):
 
