@@ -9,8 +9,8 @@
 
 ### Bug Fixes
 
-- Expand shortened links in text (thanks to [WesleyBlancoYuan](github.com/WesleyBlancoYuan)).
-- Fix cookies option (thanks to [WesleyBlancoYuan](github.com/WesleyBlancoYuan)).
+- Expand shortened links in text (thanks to [WesleyBlancoYuan](https://github.com/WesleyBlancoYuan)).
+- Fix cookies option (thanks to [WesleyBlancoYuan](https://github.com/WesleyBlancoYuan)).
 
 ### Other
 
