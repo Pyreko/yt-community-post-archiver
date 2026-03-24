@@ -99,7 +99,7 @@ def _create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-c",
-        "--cookie",
+        "--cookies",
         "--cookie-path",
         dest="cookie_path",
         type=str,
