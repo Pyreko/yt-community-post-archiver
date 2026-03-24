@@ -137,9 +137,9 @@ def _get_text(post: WebElement, links: list[str]) -> str:
             truncated = match.group(0)
             prefix = truncated.replace("...", "")
 
-            for l in links:
-                if l.startswith(prefix):
-                    return l
+            for link in links:
+                if link.startswith(prefix):
+                    return link
 
             return truncated
 
