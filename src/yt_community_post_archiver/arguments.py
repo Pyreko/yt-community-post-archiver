@@ -73,6 +73,7 @@ class ArchiverSettings:
     take_screenshots: bool
     skip_existing: bool
     remote_debugging_port: int | None
+    debug: bool
 
 
 def _create_parser() -> argparse.ArgumentParser:
@@ -184,6 +185,11 @@ def _create_parser() -> argparse.ArgumentParser:
         help="Connect to an running Chrome/Chromium instance launched with --remote-debugging-port=PORT.",
     )
     parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging for troubleshooting.",
+    )
+    parser.add_argument(
         "-v",
         "--version",
         action="version",
@@ -229,6 +235,7 @@ def get_settings() -> tuple[ArchiverSettings, int]:
             take_screenshots=args.take_screenshots,
             skip_existing=args.skip_existing,
             remote_debugging_port=args.remote_debugging_port,
+            debug=args.debug,
         ),
         rerun,
     )

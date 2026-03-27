@@ -74,6 +74,11 @@ class Archiver:
         self.save_comments_types = settings.save_comments_types
         self.max_comments = settings.max_comments
         self.original_handle = ""
+        self.debug = settings.debug
+
+    def _debug(self, msg: str):
+        if self.debug:
+            print(f"[DEBUG] {msg}")
 
     def set_cookies(self):
         if self.cookie_path is None:
@@ -144,6 +149,7 @@ class Archiver:
                     save_comments_types=self.save_comments_types,
                     max_comments=self.max_comments,
                     original_handle=self.original_handle,
+                    debug=self.debug,
                 )
                 post_builder.process_post()
 
@@ -174,8 +180,13 @@ class Archiver:
             try:
                 # Check the current URL isn't a post. If it is, try closing the current tab;
                 # if only the original tab was left, then the root URL was a post, so halt.
-                if get_true_comment_count(self.driver) is not None:
-                    if close_current_tab(self.driver, self.original_handle) == 1:
+                comment_count = get_true_comment_count(self.driver)
+                if comment_count is not None:
+                    tabs_left = close_current_tab(self.driver, self.original_handle)
+                    self._debug(
+                        f"could_scroll: found comment_count={comment_count} on current page, tabs_left={tabs_left}"
+                    )
+                    if tabs_left == 1:
                         return False
 
                 self.driver.execute_script("window.scrollBy(0, 500);")
@@ -205,6 +216,7 @@ class Archiver:
 
             while True:
                 posts = self.find_posts()
+                self._debug(f"Found {len(posts)} new posts on page")
                 for post, url in posts:
                     if self.at_max_posts():
                         print(f"Hit maximum posts ({self.max_posts}). Halting.")
@@ -215,9 +227,14 @@ class Archiver:
                     if not self.should_skip_post(url) and url not in self.seen:
                         self.handle_post(post, url)
                     else:
+                        self.seen.add(url)
                         print(f"Skipping `{url}` as it already exists.")
 
-                if not self.could_scroll():
+                can_scroll = self.could_scroll()
+                self._debug(
+                    f"could_scroll={can_scroll}, seen={len(self.seen)}, tabs={len(self.driver.window_handles)}"
+                )
+                if not can_scroll:
                     break
 
                 time.sleep(LOAD_SLEEP_SECS)
