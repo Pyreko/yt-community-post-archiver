@@ -212,6 +212,11 @@ class PostBuilder:
     save_comments_types: set[CommentType]
     max_comments: int | None
     original_handle: str
+    debug: bool = False
+
+    def _debug(self, msg: str):
+        if self.debug:
+            print(f"[DEBUG] {msg}")
 
     def __open_post_in_tab(self, url: str) -> WebElement | None:
         self.driver.switch_to.new_window("tab")
@@ -275,8 +280,10 @@ class PostBuilder:
             return to_return
 
         comments = get_comment_elements()
+        self._debug(f"Initial comment elements found: {len(comments)}")
 
         if not comments:
+            self._debug("No comments found, returning early")
             return
 
         save_comments_types = self.save_comments_types
@@ -305,6 +312,9 @@ class PostBuilder:
         no_new_comments_counter = 0
 
         while True:
+            self._debug(
+                f"Comment loop iteration: {len(comments)} new comments, saved so far: {comments_saved}, no_new_counter: {no_new_comments_counter}"
+            )
             for comment_element, link in comments:
                 if not (
                     (CommentType.ALL in save_comments_types)
@@ -334,8 +344,14 @@ class PostBuilder:
             comments = get_comment_elements()
             if len(comments) == 0:
                 no_new_comments_counter += 1
+                self._debug(
+                    f"No new comments after scroll ({no_new_comments_counter}/5)"
+                )
 
                 if no_new_comments_counter >= 5:
+                    self._debug(
+                        f"Giving up on comments after 5 empty scrolls. Total saved: {comments_saved}"
+                    )
                     break
 
     def process_post(self) -> Post | None:
@@ -344,10 +360,14 @@ class PostBuilder:
 
         post_link = get_post_link(post)
         if post_link is None:
+            self._debug(f"No post link found for {url}")
             return
 
         relative_date = post_link.text
         is_members = _is_members_post(post)
+        self._debug(
+            f"Processing post: {url}, is_members={is_members}, members_filter={self.members}"
+        )
 
         if self.members is not None:
             if self.members == MembersPostType.MEMBERS_ONLY and (not is_members):
@@ -372,11 +392,18 @@ class PostBuilder:
         opened_post: None | WebElement = None
         opened_tab = False
 
+        self._debug(
+            f"Initial num_comments={num_comments}, will open tab: {num_comments is None}"
+        )
+
         # If there are no comments then we must not be in the post link itself.
         if num_comments is None:
             opened_post = self.__open_post_in_tab(url)
             num_comments = get_true_comment_count(self.driver)
             opened_tab = True
+            self._debug(
+                f"Opened tab: opened_post={'found' if opened_post else 'None'}, num_comments={num_comments}"
+            )
         else:
             opened_post = post
 
@@ -396,12 +423,23 @@ class PostBuilder:
         )
 
         post.save(self.output_dir)
+        self._debug(f"Post saved: {url}")
 
         if self.take_screenshots:
             self.__take_screenshots(opened_post)
 
         if self.save_comments_types:
+            self._debug(
+                f"Starting comment collection, types={self.save_comments_types}, max={self.max_comments}"
+            )
             self.__get_comments()
 
         if opened_tab and opened_post is not None:
+            self._debug(
+                f"Closing tab (opened_tab={opened_tab}, opened_post={'found' if opened_post else 'None'})"
+            )
             close_current_tab(self.driver, self.original_handle)
+        elif opened_tab:
+            self._debug(
+                "WARNING: Tab was opened but opened_post is None — tab NOT closed!"
+            )
